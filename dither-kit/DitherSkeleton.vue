@@ -1,21 +1,30 @@
 <script lang="ts">
 import { rgb } from "./palette"
-import { BAYER4, fillOf, pixelPrefersReducedMotion } from "./pixel"
+import { BAYER4, fillOf, pixelMatrixFromSeed, pixelPrefersReducedMotion, xorshift32 } from "./pixel"
 
 const CELL = 2
 const GREY = fillOf("grey")
 
-/** One frame of the muted field — density breathes ±0.1 around 0.45 so pixels
+/** Shimmer character — seed varies the breathe rate, amplitude and baseline
+ * so each seeded skeleton pulses uniquely; the default stays calm and steady. */
+function shimmerFromSeed(seed: number) {
+  const rand = xorshift32(Math.round(seed) ^ 0x3c6ef372)
+  return { base: 0.4 + rand() * 0.1, amp: 0.06 + rand() * 0.12, rate: 0.001 + rand() * 0.0015 }
+}
+const SHIMMER_DEFAULT = { base: 0.45, amp: 0.1, rate: 0.0015 }
+
+/** One frame of the muted field — density breathes around a baseline so pixels
  * flip on and off through their Bayer thresholds as the sine sweeps. */
 function paintSkeleton(
   ctx: CanvasRenderingContext2D,
   cols: number,
   rows: number,
   phase: number,
-  matrix: number[][] = BAYER4
+  matrix: number[][] = BAYER4,
+  shimmer = SHIMMER_DEFAULT
 ): void {
   ctx.clearRect(0, 0, cols, rows)
-  const density = 0.45 + 0.1 * Math.sin(phase)
+  const density = shimmer.base + shimmer.amp * Math.sin(phase)
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const lit = density > matrix[y & 3][x & 3]
@@ -30,7 +39,9 @@ function paintSkeleton(
 import { onBeforeUnmount, onMounted, ref } from "vue"
 import { cn } from "./lib"
 
-const props = defineProps<{ class?: string }>()
+const props = defineProps<{ seed?: number; class?: string }>()
+const shimmer = props.seed !== undefined ? shimmerFromSeed(props.seed) : SHIMMER_DEFAULT
+const matrix = props.seed !== undefined ? pixelMatrixFromSeed(props.seed) : BAYER4
 
 const wrapRef = ref<HTMLDivElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -49,7 +60,7 @@ function init(): (() => void) | undefined {
   let phase = 0
   let raf = 0
 
-  const draw = () => paintSkeleton(ctx, cols, rows, phase)
+  const draw = () => paintSkeleton(ctx, cols, rows, phase, matrix, shimmer)
 
   const resize = () => {
     const box = wrap.getBoundingClientRect()
@@ -62,7 +73,7 @@ function init(): (() => void) | undefined {
   resize()
 
   const tick = (now: number) => {
-    phase = now * 0.0015
+    phase = now * shimmer.rate
     draw()
     raf = requestAnimationFrame(tick)
   }

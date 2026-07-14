@@ -5,12 +5,21 @@ import {
   BAYER4,
   fillOf,
   type PixelColor,
+  pixelMatrixFromSeed,
   pixelPrefersReducedMotion,
+  xorshift32,
 } from "./pixel"
 
 const CELL = 2
 const TAU = Math.PI * 2
-const ARC = Math.PI * 1.5 // 270° of the ring
+const ARC_DEFAULT = Math.PI * 1.5 // 270° of the ring
+
+/** Spin character — seed varies rotation speed and arc sweep, so each seeded
+ * spinner has its own cadence; the default stays a readable 270° at ~1 turn/1.6s. */
+function spinFromSeed(seed: number) {
+  const rand = xorshift32(Math.round(seed) ^ 0x2f72b4a1)
+  return { speed: 0.003 + rand() * 0.004, arc: Math.PI * (1.2 + rand() * 0.6) }
+}
 
 /** One frame of the arc — a ~3-cell-thick ring band whose density fades from
  * the head to the tail through the Bayer matrix. */
@@ -19,7 +28,8 @@ function paintSpinner(
   cells: number,
   fill: Rgb,
   start: number,
-  matrix: number[][] = BAYER4
+  matrix: number[][] = BAYER4,
+  arc: number = ARC_DEFAULT
 ): void {
   ctx.clearRect(0, 0, cells, cells)
   const c = cells / 2
@@ -32,8 +42,8 @@ function paintSpinner(
       const r = Math.hypot(dx, dy)
       if (r < rInner || r > rOuter) continue
       const rel = (Math.atan2(dy, dx) - start + TAU * 2) % TAU
-      if (rel > ARC) continue
-      const density = 1 - 0.8 * (rel / ARC)
+      if (rel > arc) continue
+      const density = 1 - 0.8 * (rel / arc)
       if (density <= matrix[y & 3][x & 3]) continue
       ctx.fillStyle = rgb(fill, 1, 0.4 + 0.6 * density)
       ctx.fillRect(x, y, 1, 1)
@@ -49,9 +59,13 @@ const props = withDefaults(
   defineProps<{
     size?: number
     color?: PixelColor
+    seed?: number
   }>(),
   { size: 20, color: "blue" }
 )
+
+const spin = props.seed !== undefined ? spinFromSeed(props.seed) : { speed: 0.004, arc: ARC_DEFAULT }
+const matrix = props.seed !== undefined ? pixelMatrixFromSeed(props.seed) : BAYER4
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
@@ -69,14 +83,14 @@ function init(): (() => void) | undefined {
   let raf = 0
   let last = 0
 
-  paintSpinner(ctx, cells, fill, -Math.PI / 2)
+  paintSpinner(ctx, cells, fill, -Math.PI / 2, matrix, spin.arc)
 
   if (!pixelPrefersReducedMotion()) {
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame)
       if (now - last < 33) return // ~30fps
       last = now
-      paintSpinner(ctx, cells, fill, (now * 0.004) % TAU)
+      paintSpinner(ctx, cells, fill, (now * spin.speed) % TAU, matrix, spin.arc)
     }
     raf = requestAnimationFrame(frame)
   }
