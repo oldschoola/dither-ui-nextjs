@@ -15,6 +15,8 @@
   --muted-foreground: #6b7280;
   --border: #e4e4e7;
   --ring: #0a0a0a;
+  --accent: #2f81f7;
+  --accent-foreground: #ffffff;
   --radius: 0.5rem;
 
   /* Palette swatches — mirror PALETTE fills in palette.ts. */
@@ -38,6 +40,8 @@
   --muted-foreground: #8b8f98;
   --border: #22252b;
   --ring: #ededed;
+  --accent: #3f8ff3;
+  --accent-foreground: #ffffff;
 }
 
 @theme inline {
@@ -51,6 +55,8 @@
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
   --color-ring: var(--ring);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);

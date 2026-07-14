@@ -38,7 +38,7 @@ function onResizeDown(e: PointerEvent) {
   >
     <div
       class="absolute -top-6 left-0 flex max-w-full cursor-move select-none items-center gap-1.5 truncate text-[11px]"
-      :class="selected ? 'text-foreground' : 'text-muted-foreground'"
+      :class="selected ? 'text-accent' : 'text-muted-foreground'"
       @pointerdown.stop="onHeaderDown"
     >
       <span class="truncate">{{ artboard.name }}</span>
@@ -47,14 +47,14 @@ function onResizeDown(e: PointerEvent) {
 
     <div
       class="h-full w-full rounded-lg bg-card/60 p-3"
-      :class="selected ? 'ring-2 ring-foreground' : 'ring-1 ring-white/10 dark:ring-white/10'"
+      :class="selected ? 'ring-2 ring-accent' : 'border border-border'"
     >
       <ChartRenderer :chart="artboard.chart" />
     </div>
 
     <div
       v-if="selected"
-      class="absolute -bottom-1.5 -right-1.5 size-3 cursor-nwse-resize rounded-[2px] border border-foreground bg-background"
+      class="absolute -bottom-1.5 -right-1.5 size-3 cursor-nwse-resize rounded-[2px] border border-accent bg-background"
       @pointerdown.stop="onResizeDown"
     />
   </div>

@@ -43,14 +43,14 @@ function toggle(layer: Layer) {
 
 <template>
   <div class="flex flex-col gap-0.5">
-    <p class="mb-1 px-2 text-[10px] uppercase tracking-widest text-muted-foreground">layers</p>
+    <p class="mb-1 px-2 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">layers</p>
     <button
       v-for="layer in selectedLayers"
       :key="layer.id"
       type="button"
       class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
       :class="[
-        editor.selectedLayerId === layer.id ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-card',
+        editor.selectedLayerId === layer.id ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-card',
         !visible(layer) && togglable(layer) ? 'opacity-45' : '',
         layer.kind === 'root' ? 'font-medium' : '',
         layer.kind === 'series' ? 'pl-5' : '',

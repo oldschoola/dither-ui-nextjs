@@ -5,6 +5,7 @@ const props = defineProps<{
   min?: number
   max?: number
   step?: number
+  unit?: string
 }>()
 const emit = defineEmits<{ "update:modelValue": [number] }>()
 
@@ -19,15 +20,19 @@ function onInput(e: Event) {
 
 <template>
   <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
-    <span class="w-10 shrink-0">{{ label }}</span>
-    <input
-      type="number"
-      :value="modelValue"
-      :min="min"
-      :max="max"
-      :step="step ?? 1"
-      class="w-full min-w-0 rounded-md border border-border bg-background/60 px-2 py-1 text-xs tabular-nums text-foreground outline-none [appearance:textfield] focus:border-foreground/40 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-      @input="onInput"
-    />
+    <span class="w-11 shrink-0 whitespace-nowrap">{{ label }}</span>
+    <span class="relative flex-1">
+      <input
+        type="number"
+        :value="modelValue"
+        :min="min"
+        :max="max"
+        :step="step ?? 1"
+        class="w-full min-w-0 rounded-md border border-border bg-background/60 px-2 py-1 text-xs tabular-nums text-foreground outline-none [appearance:textfield] focus:border-accent/60 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        :class="unit ? 'pr-6' : ''"
+        @input="onInput"
+      />
+      <span v-if="unit" class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{{ unit }}</span>
+    </span>
   </label>
 </template>

@@ -33,7 +33,7 @@ function setPieVariant(v: AreaVariant) {
     <template v-if="kind === 'root'">
       <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
         <span class="w-14 shrink-0">name</span>
-        <input v-model="ab.name" type="text" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-foreground/40" />
+        <input v-model="ab.name" type="text" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-accent/60" />
       </label>
       <div class="grid grid-cols-2 gap-2">
         <NumberField v-model="ab.x" label="X" />
@@ -44,8 +44,8 @@ function setPieVariant(v: AreaVariant) {
 
       <section>
         <p class="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">type</p>
-        <div class="flex flex-wrap gap-1.5">
-          <button v-for="t in CHART_TYPES" :key="t" type="button" class="rounded-md px-2.5 py-1 text-xs capitalize transition-colors" :class="chart.type === t ? 'bg-foreground text-background' : 'border border-border text-muted-foreground hover:text-foreground'" @click="setSelectedType(t)">{{ t }}</button>
+        <div class="flex flex-wrap gap-0.5 rounded-md border border-border bg-background/60 p-0.5">
+          <button v-for="t in CHART_TYPES" :key="t" type="button" class="rounded-[5px] px-2.5 py-1 text-xs capitalize leading-none transition-colors" :class="chart.type === t ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:text-foreground'" @click="setSelectedType(t)">{{ t }}</button>
         </div>
       </section>
 
@@ -58,7 +58,7 @@ function setPieVariant(v: AreaVariant) {
           <input v-model.number="chart.innerRadius" type="range" min="0" max="0.85" step="0.05" class="flex-1 accent-foreground" />
           <span class="w-8 tabular-nums text-foreground">{{ chart.innerRadius.toFixed(2) }}</span>
         </label>
-        <NumberField v-model="chart.animationDuration" label="anim ms" :min="0" :max="4000" :step="50" />
+        <NumberField v-model="chart.animationDuration" label="anim" unit="ms" :min="0" :max="4000" :step="50" />
         <div class="flex gap-4 pt-0.5">
           <Toggle v-model="chart.animate" label="animate" />
           <Toggle v-if="fam === 'cartesian'" v-model="chart.interactive" label="interactive" />
@@ -80,7 +80,7 @@ function setPieVariant(v: AreaVariant) {
     <template v-else-if="kind === 'series' && series">
       <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
         <span class="w-14 shrink-0">label</span>
-        <input v-model="series.label" type="text" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-foreground/40" />
+        <input v-model="series.label" type="text" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-accent/60" />
       </label>
       <div class="text-[11px] text-muted-foreground">
         <span class="mb-1 block">color</span>
@@ -111,7 +111,7 @@ function setPieVariant(v: AreaVariant) {
       </div>
       <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
         <span class="w-14 shrink-0">dash</span>
-        <input v-model="chart.grid.dash" type="text" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-foreground/40" placeholder="3 3" />
+        <input v-model="chart.grid.dash" type="text" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-accent/60" placeholder="3 3" />
       </label>
     </template>
 

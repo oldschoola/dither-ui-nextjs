@@ -11,11 +11,11 @@ const emit = defineEmits<{ "update:modelValue": [T] }>()
   <div class="flex items-center gap-2">
     <span
       v-if="label"
-      class="w-16 shrink-0 text-[11px] text-muted-foreground"
+      class="w-14 shrink-0 whitespace-nowrap text-[11px] text-muted-foreground"
       >{{ label }}</span
     >
     <div
-      class="inline-flex rounded-md border border-border bg-background/60 p-0.5"
+      class="flex flex-1 flex-wrap rounded-md border border-border bg-background/60 p-0.5"
     >
       <button
         v-for="opt in options"
@@ -24,7 +24,7 @@ const emit = defineEmits<{ "update:modelValue": [T] }>()
         class="rounded-[5px] px-2 py-1 font-mono text-[11px] leading-none transition-colors"
         :class="
           opt === modelValue
-            ? 'bg-foreground text-background'
+            ? 'bg-accent text-accent-foreground'
             : 'text-muted-foreground hover:text-foreground'
         "
         @click="emit('update:modelValue', opt)"
