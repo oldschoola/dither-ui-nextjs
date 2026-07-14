@@ -16,6 +16,15 @@
   --border: #e4e4e7;
   --ring: #0a0a0a;
   --radius: 0.5rem;
+
+  /* Palette swatches — mirror PALETTE fills in palette.ts. */
+  --swatch-green: rgb(40, 210, 110);
+  --swatch-blue: rgb(53, 143, 243);
+  --swatch-purple: rgb(150, 110, 255);
+  --swatch-pink: rgb(240, 90, 190);
+  --swatch-orange: rgb(255, 150, 50);
+  --swatch-red: rgb(240, 70, 70);
+  --swatch-grey: rgb(92, 92, 100);
 }
 
 .dark {
