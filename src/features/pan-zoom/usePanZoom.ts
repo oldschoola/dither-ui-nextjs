@@ -67,11 +67,10 @@ export function usePanZoom(host: Ref<HTMLElement | null>) {
     v.y = 88
   }
 
-  /** Frame all artboards in the viewport (never zooms past 100%). */
-  const fit = () => {
+  /** Frame the given artboards in the viewport (never zooms past 100%). */
+  const frame = (abs: { x: number; y: number; w: number; h: number }[]) => {
     const rect = host.value?.getBoundingClientRect()
     if (!rect) return
-    const abs = editor.artboards
     if (!abs.length) return resetZoom()
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
     for (const a of abs) {
@@ -89,5 +88,12 @@ export function usePanZoom(host: Ref<HTMLElement | null>) {
     v.y = (rect.height - ch * z) / 2 - minY * z
   }
 
-  return { onWheel, startPan, zoomIn, zoomOut, resetZoom, fit }
+  const fit = () => frame(editor.artboards)
+  /** Frame only the selection (falls back to everything). */
+  const fitSelection = () => {
+    const sel = editor.artboards.filter((a) => editor.selectedIds.includes(a.id))
+    frame(sel.length ? sel : editor.artboards)
+  }
+
+  return { onWheel, startPan, zoomIn, zoomOut, resetZoom, fit, fitSelection }
 }

@@ -6,8 +6,8 @@ import { usePanZoom } from "@/features/pan-zoom"
 import Artboard from "./Artboard.vue"
 
 const host = ref<HTMLElement | null>(null)
-const { onWheel, startPan, zoomIn, zoomOut, resetZoom, fit } = usePanZoom(host)
-useShortcuts({ fit, zoomIn, zoomOut, resetZoom })
+const { onWheel, startPan, zoomIn, zoomOut, resetZoom, fit, fitSelection } = usePanZoom(host)
+useShortcuts({ fit, fitSelection, zoomIn, zoomOut, resetZoom })
 const visible = computed(() => editor.artboards.filter((a) => !a.hidden))
 
 // Space-to-pan (Figma convention): plain drag on empty canvas = marquee.

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue"
+import { computed, ref } from "vue"
 import type { Artboard } from "@/entities/artboard"
 import { editor, selectArtboard } from "@/entities/editor"
 import { startDrag } from "@/features/artboard-transform"
@@ -8,6 +8,8 @@ import { WidgetRenderer } from "@/widgets/widget-renderer"
 
 const props = defineProps<{ artboard: Artboard }>()
 const selected = computed(() => editor.selectedIds.includes(props.artboard.id))
+// Live position/size readout while dragging or resizing.
+const interacting = ref(false)
 
 const additive = (e: PointerEvent) => e.metaKey || e.ctrlKey || e.shiftKey
 
@@ -30,6 +32,7 @@ function onHeaderDown(e: PointerEvent) {
   const { w, h } = props.artboard
   let accX = 0
   let accY = 0
+  interacting.value = true
   startDrag(
     e,
     (dx, dy) => {
@@ -77,6 +80,7 @@ function onHeaderDown(e: PointerEvent) {
     () => {
       editor.guides.v = null
       editor.guides.h = null
+      interacting.value = false
     }
   )
 }
@@ -104,6 +108,7 @@ function onResizeDown(dir: ResizeDir, e: PointerEvent) {
   const minH = a.widget ? 60 : 200
   let ax = 0
   let ay = 0
+  interacting.value = true
   startDrag(e, (dx, dy, ev) => {
     ax += dx
     ay += dy
@@ -126,6 +131,8 @@ function onResizeDown(dir: ResizeDir, e: PointerEvent) {
     a.h = h
     a.x = dir.includes("w") ? start.x + (start.w - w) : start.x
     a.y = dir.includes("n") ? start.y + (start.h - h) : start.y
+  }, () => {
+    interacting.value = false
   })
 }
 </script>
@@ -149,7 +156,8 @@ function onResizeDown(dir: ResizeDir, e: PointerEvent) {
     >
       <svg v-if="artboard.locked" viewBox="0 0 24 24" class="size-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
       <span class="truncate">{{ artboard.name }}</span>
-      <span class="text-muted-foreground/60">{{ artboard.w }}×{{ artboard.h }}</span>
+      <span class="tabular-nums text-muted-foreground/60">
+        <template v-if="interacting">{{ Math.round(artboard.x) }}, {{ Math.round(artboard.y) }} · </template>{{ artboard.w }}×{{ artboard.h }}</span>
     </div>
 
     <div

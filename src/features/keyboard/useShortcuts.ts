@@ -16,6 +16,7 @@ import { redo, undo } from "@/features/history"
 
 type ZoomControls = {
   fit: () => void
+  fitSelection: () => void
   zoomIn: () => void
   zoomOut: () => void
   resetZoom: () => void
@@ -53,6 +54,7 @@ export function useShortcuts(zoom: ZoomControls) {
     if ((mod && e.key === "0") || (e.shiftKey && e.key === "0"))
       return e.preventDefault(), zoom.resetZoom()
     if (e.shiftKey && e.key === "1") return e.preventDefault(), zoom.fit()
+    if (e.shiftKey && e.key === "2") return e.preventDefault(), zoom.fitSelection()
 
     // Selection
     const id = editor.selectedArtboardId
