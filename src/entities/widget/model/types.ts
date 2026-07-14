@@ -9,10 +9,19 @@ import type {
 
 export type { PixelBloomConfig, PixelBloomInput, PixelColor }
 
+/** How the avatar's cells are produced. */
+export type AvatarSource = "seed" | "draw" | "image"
+
 /** Fully granular avatar model — every engine prop, editable. */
 export type AvatarModel = {
   kind: "avatar"
   name: string
+  source: AvatarSource
+  /** Explicit cells for draw/image sources (null while seeded). */
+  pattern: { on: (boolean | 0 | 1)[]; density: number[] } | null
+  imageSrc: string // image source URL / data URI
+  imageThreshold: number // 0–1 luminance cut
+  imageInvert: boolean // flip for dark-background images
   autoColor: boolean // derive the colour from the name
   color: PixelColor // used when autoColor is off (hex or preset)
   mirror: AvatarMirror

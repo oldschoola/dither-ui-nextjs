@@ -1,15 +1,19 @@
 <script lang="ts">
 import { rgb } from "./palette"
 import {
+  type AvatarPattern,
+  clampGrid,
+  normalizePattern,
+  seededPattern,
+} from "./avatar-pattern"
+import {
   BAYER4,
   clamp01,
   fillOf,
-  fnv1a,
   hueFill,
   type PixelBloomInput,
   type PixelColor,
   pixelPrefersReducedMotion,
-  xorshift32,
 } from "./pixel"
 
 // Defaults: 8×8 cells mirrored across one axis → 32 free pattern bits. With
@@ -29,32 +33,19 @@ function avatarModel(
   name: string,
   colorProp: PixelColor | undefined,
   mirrorProp: AvatarMirror,
-  gridProp: number
+  gridProp: number,
+  patternProp: AvatarPattern | undefined
 ): AvatarModel {
-  const grid = Math.max(4, Math.min(16, Math.round(gridProp / 2) * 2))
-  const half = (grid * grid) / 2
-  const rand = xorshift32(fnv1a(name))
-  const bits = Array.from({ length: half }, () => rand() < 0.5)
-  const drawnVertical = rand() < 0.5
-  const drawnHue = Math.floor(rand() * 180) * 2
-  const halfDensity = Array.from({ length: half }, () => 0.55 + rand() * 0.45)
-
-  const vertical =
-    mirrorProp === "auto" ? drawnVertical : mirrorProp === "vertical"
-  const fill = colorProp != null ? fillOf(colorProp) : hueFill(drawnHue)
-
-  const on = new Array<boolean>(grid * grid)
-  const density = new Array<number>(grid * grid)
-  for (let r = 0; r < grid; r++) {
-    for (let c = 0; c < grid; c++) {
-      const i = vertical
-        ? Math.min(r, grid - 1 - r) * grid + c
-        : r * (grid / 2) + Math.min(c, grid - 1 - c)
-      on[r * grid + c] = bits[i]
-      density[r * grid + c] = halfDensity[i]
-    }
+  const grid = clampGrid(gridProp)
+  const seeded = seededPattern(name, grid, mirrorProp)
+  const fill = colorProp != null ? fillOf(colorProp) : hueFill(seeded.drawnHue)
+  // An explicit pattern (drawn cells or a dithered image) overrides the seed;
+  // the colour still derives from the name unless overridden.
+  if (patternProp) {
+    const { on, density } = normalizePattern(patternProp, grid)
+    return { grid, on, density, fill }
   }
-  return { grid, on, density, fill }
+  return { grid, on: seeded.on, density: seeded.density, fill }
 }
 
 type PaintOpts = {
@@ -144,6 +135,8 @@ const props = withDefaults(
     mirror?: AvatarMirror
     size?: number
     grid?: number // even cell count per side (4–16)
+    /** Explicit cells (drawn or image-derived) — overrides the seeded pattern. */
+    pattern?: AvatarPattern
     cellPx?: number // backing px per cell — dither resolution inside a cell
     density?: number // additive density bias (-0.5–0.5)
     offTier?: number // 0–1 alpha of unlit backing pixels
@@ -178,7 +171,7 @@ function paint() {
   teardown = paintAvatar(
     canvas,
     bloomRef.value,
-    avatarModel(props.name, props.color ?? props.hue, props.mirror, props.grid),
+    avatarModel(props.name, props.color ?? props.hue, props.mirror, props.grid, props.pattern),
     {
       animate: props.animate,
       duration: props.animationDuration,
@@ -194,7 +187,7 @@ watch(
   () => [
     props.name, props.color, props.hue, props.mirror, props.grid, props.cellPx,
     props.density, props.offTier, props.animate, props.animationDuration,
-    props.replayToken, props.bloom,
+    props.replayToken, props.bloom, props.pattern,
   ],
   paint
 )

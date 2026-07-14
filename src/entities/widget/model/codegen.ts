@@ -118,6 +118,11 @@ export function widgetCode(w: WidgetModel, frame: { w: number; h: number }): str
   if (w.kind === "screen") return screenCode(w)
   if (w.kind === "avatar") {
     const attrs: string[] = [`name="${w.name}"`, `:size="${Math.round(Math.min(frame.w, frame.h))}"`]
+    if (w.source !== "seed" && w.pattern) {
+      const on = w.pattern.on.map((v) => (v ? 1 : 0))
+      const density = w.pattern.density.map((d) => Math.round(d * 100) / 100)
+      attrs.push(`:pattern='${JSON.stringify({ on, density })}'`)
+    }
     if (!w.autoColor) attrs.push(colorAttr("color", w.color).trim())
     if (w.mirror !== "auto") attrs.push(`mirror="${w.mirror}"`)
     if (w.grid !== 8) attrs.push(`:grid="${w.grid}"`)

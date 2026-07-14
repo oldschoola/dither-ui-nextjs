@@ -31,6 +31,7 @@ const hasModel = computed(
   <div v-if="w.kind === 'avatar'" class="flex h-full w-full items-center justify-center">
     <DitherAvatar
       :name="w.name"
+      :pattern="w.source !== 'seed' && w.pattern ? w.pattern : undefined"
       :color="w.autoColor ? undefined : w.color"
       :mirror="w.mirror"
       :grid="w.grid"

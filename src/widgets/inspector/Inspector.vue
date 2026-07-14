@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue"
-import { colorToHex, type VariantInput } from "@dither-kit"
+import { computed, ref } from "vue"
+import { colorToHex, patternFromImage, type VariantInput } from "@dither-kit"
 import { editor, replay, selectedArtboard, selectedChart, selectedLayers, selectLayer, setSelectedType } from "@/entities/editor"
 import {
   addCell,
@@ -15,6 +15,7 @@ import {
   removeScreenRow,
   type ScreenRow,
 } from "@/entities/widget"
+import AvatarDrawGrid from "./AvatarDrawGrid.vue"
 import ComponentPropsPanel from "./ComponentPropsPanel.vue"
 import { CHART_TYPES, EASING_NAMES, familyOf, STACKS } from "@/shared/config"
 import { BezierEditor, BloomField, ColorField, NumberField, Segmented, TextureField, Toggle } from "@/shared/ui"
@@ -138,6 +139,46 @@ function addCellFromPicker(row: ScreenRow, e: Event) {
   ;(e.target as HTMLSelectElement).value = ""
 }
 const MIRRORS = ["auto", "horizontal", "vertical"] as const
+const AVATAR_SOURCES = ["seed", "draw", "image"] as const
+const avatarFileInput = ref<HTMLInputElement | null>(null)
+const avatarImageError = ref(false)
+
+function setAvatarSource(v: string | number) {
+  if (!avatar.value) return
+  avatar.value.source = v as (typeof AVATAR_SOURCES)[number]
+  if (v === "seed") avatar.value.pattern = null
+  if (v === "image" && avatar.value.imageSrc) deriveAvatarImage()
+}
+
+/** Dither the image into the grid; keeps the previous pattern on failure. */
+async function deriveAvatarImage() {
+  const a = avatar.value
+  if (!a || a.source !== "image" || !a.imageSrc) return
+  const result = await patternFromImage(a.imageSrc, a.grid, a.imageThreshold, a.imageInvert)
+  avatarImageError.value = !result
+  if (result) {
+    a.pattern = {
+      on: result.on.map((b) => (b ? 1 : 0)),
+      density: result.density.map((d) => Math.round(d * 100) / 100),
+    }
+  }
+}
+async function onAvatarFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (file && avatar.value) {
+    // Data URI (not object URL) so the image survives save/reload/export.
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (avatar.value && typeof reader.result === "string") {
+        avatar.value.imageSrc = reader.result
+        deriveAvatarImage()
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+  input.value = ""
+}
 const BUTTON_VARIANTS = ["gradient", "dotted", "hatched", "solid"] as const
 const GRAD_DIRS = ["up", "down", "left", "right"] as const
 /** PixelColor may be a legacy hue number — coerce for the ColorField. */
@@ -320,10 +361,29 @@ function setPieVariant(v: VariantInput) {
       <template v-if="avatar">
         <section class="flex flex-col gap-3">
           <p class="text-[10px] uppercase tracking-widest text-muted-foreground">avatar</p>
-          <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <Segmented :model-value="avatar.source ?? 'seed'" :options="AVATAR_SOURCES" label="source" @update:model-value="setAvatarSource" />
+          <label v-if="(avatar.source ?? 'seed') === 'seed'" class="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span class="w-14 shrink-0">seed</span>
             <input v-model="avatar.name" type="text" name="avatar-seed" autocomplete="off" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-accent/60" />
           </label>
+          <AvatarDrawGrid v-if="avatar.source === 'draw'" :avatar="avatar" />
+          <template v-if="avatar.source === 'image'">
+            <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span class="w-14 shrink-0">src</span>
+              <input v-model="avatar.imageSrc" type="text" name="avatar-image-src" autocomplete="off" placeholder="https://…" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-accent/60" @change="deriveAvatarImage" />
+            </label>
+            <div class="flex items-center gap-2">
+              <button type="button" class="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground" @click="avatarFileInput?.click()">upload…</button>
+              <input ref="avatarFileInput" type="file" accept="image/*" name="avatar-image-file" class="hidden" @change="onAvatarFile" />
+              <span v-if="avatarImageError" class="text-[10px] text-red-400">couldn't read that image</span>
+            </div>
+            <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <span class="w-14 shrink-0">cutoff</span>
+              <input v-model.number="avatar.imageThreshold" type="range" name="avatar-threshold" min="0.1" max="0.9" step="0.05" class="flex-1 accent-foreground" @input="deriveAvatarImage" />
+              <span class="w-8 tabular-nums text-foreground">{{ avatar.imageThreshold.toFixed(2) }}</span>
+            </label>
+            <Toggle :model-value="avatar.imageInvert" label="invert (dark images)" @update:model-value="avatar.imageInvert = $event; deriveAvatarImage()" />
+          </template>
           <Segmented v-model="avatar.mirror" :options="MIRRORS" label="mirror" />
           <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
             <span class="w-14 shrink-0">grid</span>

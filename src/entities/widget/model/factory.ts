@@ -22,6 +22,11 @@ export function createWidget(kind: SimpleWidgetKind): WidgetModel {
       return {
         kind: "avatar",
         name: "Ada Lovelace",
+        source: "seed",
+        pattern: null,
+        imageSrc: "",
+        imageThreshold: 0.5,
+        imageInvert: false,
         autoColor: true,
         color: "#358ff3",
         mirror: "auto",
