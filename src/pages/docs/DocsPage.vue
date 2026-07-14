@@ -23,6 +23,7 @@ import {
   YAxis,
   type AreaVariant,
   type DitherColor,
+  type DotVariant,
   type GradientDirection,
 } from "@dither-kit"
 import { ref } from "vue"
@@ -85,7 +86,22 @@ const STATS = [
 ]
 
 const VARIANTS: AreaVariant[] = ["gradient", "dotted", "hatched", "solid"]
+const DOT_VARIANTS: DotVariant[] = ["border", "colored-border", "filled"]
 const wave = Array.from({ length: 20 }, (_, i) => 5 + Math.sin(i * 0.6) * 2.2 + Math.sin(i * 1.4) * 1)
+
+// Tiny single-series set for the variant galleries.
+const miniRows = [4, 7, 5, 9, 6, 8].map((v, i) => ({ x: i + 1, v }))
+const miniConfig = { v: { color: "blue" as DitherColor } }
+const miniPieRows = [
+  { name: "a", value: 42 },
+  { name: "b", value: 33 },
+  { name: "c", value: 25 },
+]
+const miniPieConfig = {
+  a: { color: "blue" as DitherColor },
+  b: { color: "purple" as DitherColor },
+  c: { color: "orange" as DitherColor },
+}
 
 const BUTTON_COLORS: DitherColor[] = ["green", "blue", "purple", "pink", "orange", "red"]
 const DIRECTIONS: GradientDirection[] = ["up", "down", "left", "right"]
@@ -427,7 +443,8 @@ cssColor("blue") // rgb(53,143,243)`,
                 </AreaChart>
               </div>
             </DemoCard>
-            <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">variants</h3>
+            <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div v-for="v in VARIANTS" :key="v">
                 <Sparkline :data="wave" color="blue" :variant="v" class="h-14 w-full" />
                 <div class="mt-2 text-center text-[10px] text-muted-foreground">{{ v }}</div>
@@ -457,6 +474,19 @@ cssColor("blue") // rgb(53,143,243)`,
                 </LineChart>
               </div>
             </DemoCard>
+            <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">dot variants</h3>
+            <div class="mt-4 grid grid-cols-3 gap-4">
+              <div v-for="d in DOT_VARIANTS" :key="d">
+                <div class="h-20">
+                  <LineChart :data="miniRows" :config="miniConfig" :interactive="false" :margins="{ top: 6, right: 6, bottom: 6, left: 6 }">
+                    <Line data-key="v">
+                      <Dot :variant="d" :r="2.5" />
+                    </Line>
+                  </LineChart>
+                </div>
+                <div class="mt-2 text-center text-[10px] text-muted-foreground">{{ d }}</div>
+              </div>
+            </div>
             <PropsTable :rows="API.cartesian" />
           </section>
 
@@ -481,6 +511,17 @@ cssColor("blue") // rgb(53,143,243)`,
                 </BarChart>
               </div>
             </DemoCard>
+            <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">variants</h3>
+            <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div v-for="v in VARIANTS" :key="v">
+                <div class="h-20">
+                  <BarChart :data="miniRows" :config="miniConfig" :interactive="false" :margins="{ top: 6, right: 6, bottom: 6, left: 6 }">
+                    <Bar data-key="v" :variant="v" />
+                  </BarChart>
+                </div>
+                <div class="mt-2 text-center text-[10px] text-muted-foreground">{{ v }}</div>
+              </div>
+            </div>
             <PropsTable :rows="API.cartesian" />
           </section>
 
@@ -498,6 +539,17 @@ cssColor("blue") // rgb(53,143,243)`,
                 </PieChart>
               </div>
             </DemoCard>
+            <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">variants</h3>
+            <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div v-for="v in VARIANTS" :key="v">
+                <div class="h-24">
+                  <PieChart :data="miniPieRows" :config="miniPieConfig" data-key="value" name-key="name" :inner-radius="0.5">
+                    <Pie :variant="v" />
+                  </PieChart>
+                </div>
+                <div class="mt-2 text-center text-[10px] text-muted-foreground">{{ v }}</div>
+              </div>
+            </div>
             <PropsTable :rows="API.pie" />
           </section>
 
