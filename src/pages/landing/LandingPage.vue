@@ -4,44 +4,48 @@ import { DitherButton, DitherGradient } from "@dither-kit"
 
 const openStudio = () => (window.location.hash = "#/studio")
 
-// Facial-expression portraits from the sprite sheet — boxes measured from the
-// source png, uniform y-band so panel titles above the row stay out of frame.
-const FACES = [
-  { x: 29, w: 97 }, // neutral
-  { x: 147, w: 97 }, // smile
-  { x: 262, w: 95 }, // blush
-  { x: 378, w: 98 }, // wink
-  { x: 497, w: 96 }, // surprised
-  { x: 832, w: 94 }, // excited
-]
+// Portraits + their reaction emotes, both cropped from the sprite sheet —
+// boxes measured from the source png. Hover a face, her mood answers.
 const FACE_Y = 766
 const FACE_H = 126
-const GAP = 28
+const FACES = [
+  { x: 29, w: 97, emote: { x: 1503, y: 791, w: 51, h: 49 } }, // neutral → …
+  { x: 147, w: 97, emote: { x: 1273, y: 793, w: 42, h: 38 } }, // smile → heart
+  { x: 262, w: 95, emote: { x: 1270, y: 858, w: 36, h: 41 } }, // blush → sparkles
+  { x: 378, w: 98, emote: { x: 1529, y: 864, w: 25, h: 27 } }, // wink → note
+  { x: 497, w: 96, emote: { x: 1458, y: 790, w: 20, h: 47 } }, // surprised → !
+  { x: 832, w: 94, emote: { x: 1334, y: 789, w: 40, h: 40 } }, // excited → star
+]
 
-const facesRef = ref<HTMLCanvasElement | null>(null)
+const faceEls = ref<HTMLCanvasElement[]>([])
+const emoteEls = ref<HTMLCanvasElement[]>([])
+
+/** Blit a sheet crop into a canvas at native size with the background keyed. */
+function blit(c: HTMLCanvasElement, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+  const g = c.getContext("2d")
+  if (!g) return
+  c.width = w
+  c.height = h
+  g.drawImage(img, x, y, w, h, 0, 0, w, h)
+  const px = g.getImageData(0, 0, w, h)
+  const d = px.data
+  for (let i = 0; i < d.length; i += 4) {
+    if (Math.abs(d[i] - 5) + Math.abs(d[i + 1] - 5) + Math.abs(d[i + 2] - 7) < 48)
+      d[i + 3] = 0
+  }
+  g.putImageData(px, 0, 0)
+}
 
 onMounted(() => {
   const img = new Image()
   img.src = "/sprites.png"
   img.onload = () => {
-    const c = facesRef.value
-    const g = c?.getContext("2d")
-    if (!c || !g) return
-    c.width = FACES.reduce((sum, f) => sum + f.w, 0) + GAP * (FACES.length - 1)
-    c.height = FACE_H
-    let dx = 0
-    for (const f of FACES) {
-      g.drawImage(img, f.x, FACE_Y, f.w, FACE_H, dx, 0, f.w, FACE_H)
-      dx += f.w + GAP
-    }
-    // Chroma-key the sheet's near-black background so the page shows through.
-    const px = g.getImageData(0, 0, c.width, c.height)
-    const d = px.data
-    for (let i = 0; i < d.length; i += 4) {
-      if (Math.abs(d[i] - 5) + Math.abs(d[i + 1] - 5) + Math.abs(d[i + 2] - 7) < 48)
-        d[i + 3] = 0
-    }
-    g.putImageData(px, 0, 0)
+    FACES.forEach((f, i) => {
+      const face = faceEls.value[i]
+      const emote = emoteEls.value[i]
+      if (face) blit(face, img, f.x, FACE_Y, f.w, FACE_H)
+      if (emote) blit(emote, img, f.emote.x, f.emote.y, f.emote.w, f.emote.h)
+    })
   }
 })
 </script>
@@ -85,15 +89,25 @@ onMounted(() => {
 
       </div>
 
-      <!-- Six moods, one row — static pixel portraits, nothing to animate -->
-      <div class="reveal flex justify-center overflow-x-hidden pb-16" style="--reveal-delay: 300ms">
-        <canvas
-          ref="facesRef"
-          role="img"
-          aria-label="Pixel-art character portraits in six expressions"
-          class="h-[126px] max-w-full"
-          style="image-rendering: pixelated"
-        />
+      <!-- Six moods, one row — hover a face and her emote answers -->
+      <div
+        role="img"
+        aria-label="Pixel-art character portraits in six expressions"
+        class="reveal flex flex-wrap justify-center gap-7 pb-16"
+        style="--reveal-delay: 300ms"
+      >
+        <div v-for="(_, i) in FACES" :key="i" class="group relative pt-10">
+          <canvas
+            :ref="(el) => { if (el) faceEls[i] = el as HTMLCanvasElement }"
+            class="h-[126px]"
+            style="image-rendering: pixelated"
+          />
+          <canvas
+            :ref="(el) => { if (el) emoteEls[i] = el as HTMLCanvasElement }"
+            class="emote absolute top-0 left-1/2"
+            style="image-rendering: pixelated"
+          />
+        </div>
       </div>
     </main>
 
@@ -135,5 +149,22 @@ onMounted(() => {
   .reveal {
     animation: none;
   }
+  .emote {
+    transition: none;
+  }
+}
+
+/* Reaction emote: rises out of her head on hover, same easing as the page. */
+.emote {
+  opacity: 0;
+  transform: translate(-50%, 8px) scale(0.8);
+  transition:
+    opacity 180ms cubic-bezier(0.2, 0, 0, 1),
+    transform 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.group:hover .emote {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
 }
 </style>
