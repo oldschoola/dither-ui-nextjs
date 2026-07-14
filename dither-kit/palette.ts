@@ -65,22 +65,85 @@ const mix = (a: Rgb, b: Rgb, t: number): Rgb => [
   Math.round(a[2] + (b[2] - a[2]) * t),
 ]
 
-/** A full Seed from a hue (0–360): line/star are the fill lightened toward white. */
+const seedFromFill = (fill: Rgb): Seed => ({
+  fill,
+  line: mix(fill, [255, 255, 255], 0.45),
+  star: mix(fill, [255, 255, 255], 0.72),
+})
+
+/** A full Seed from a hue (0–360). Kept for back-compat with hue-number colours. */
 export function seedFromHue(hue: number): Seed {
-  const fill = hslFill(hue)
-  return { fill, line: mix(fill, [255, 255, 255], 0.45), star: mix(fill, [255, 255, 255], 0.72) }
+  return seedFromFill(hslFill(hue))
 }
 
-/** Seed for a named preset OR an arbitrary hue number. */
-export function seedFromColor(color: DitherColor | number): Seed {
-  return typeof color === "number" ? seedFromHue(color) : PALETTE[color]
+// --- full RGB / hex / HSV colour ------------------------------------------
+export function hexToRgb(hex: string): Rgb {
+  let h = hex.replace("#", "").trim()
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]
+  const n = Number.parseInt(h, 16)
+  if (h.length !== 6 || Number.isNaN(n)) return [128, 128, 128]
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
+const hx = (n: number) =>
+  Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0")
+export const rgbToHex = ([r, g, b]: Rgb): string => `#${hx(r)}${hx(g)}${hx(b)}`
 
-/** A CSS colour string for a swatch — preset var or the hue's rgb. */
-export function cssColor(color: DitherColor | number): string {
-  if (typeof color === "number") {
-    const [r, g, b] = hslFill(color)
-    return `rgb(${r}, ${g}, ${b})`
+/** HSV (h 0–360, s/v 0–1) → rgb. */
+export function hsvToRgb(h: number, s: number, v: number): Rgb {
+  h = ((h % 360) + 360) % 360
+  const c = v * s
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const m = v - c
+  const [r, g, b] =
+    h < 60 ? [c, x, 0]
+    : h < 120 ? [x, c, 0]
+    : h < 180 ? [0, c, x]
+    : h < 240 ? [0, x, c]
+    : h < 300 ? [x, 0, c]
+    : [c, 0, x]
+  return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)]
+}
+export function rgbToHsv([r, g, b]: Rgb): { h: number; s: number; v: number } {
+  r /= 255
+  g /= 255
+  b /= 255
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const d = max - min
+  let h = 0
+  if (d) {
+    if (max === r) h = ((g - b) / d) % 6
+    else if (max === g) h = (b - r) / d + 2
+    else h = (r - g) / d + 4
+    h *= 60
+    if (h < 0) h += 360
   }
-  return `var(--swatch-${color})`
+  return { h, s: max ? d / max : 0, v: max }
+}
+export const hsvToHex = (h: number, s: number, v: number): string => rgbToHex(hsvToRgb(h, s, v))
+export const hexToHsv = (hex: string) => rgbToHsv(hexToRgb(hex))
+
+export function seedFromHex(hex: string): Seed {
+  return seedFromFill(hexToRgb(hex))
+}
+
+/** Seed for a preset name, a hue number, or a hex string — any colour. */
+export function seedFromColor(color: DitherColor | number | string): Seed {
+  if (typeof color === "number") return seedFromHue(color)
+  if (isDitherColor(color)) return PALETTE[color]
+  return seedFromHex(color)
+}
+
+/** A CSS colour string for a swatch. */
+export function cssColor(color: DitherColor | number | string): string {
+  if (typeof color === "number") return rgbToHex(hslFill(color))
+  if (isDitherColor(color)) return `var(--swatch-${color})`
+  return color
+}
+
+/** Any colour → a hex string (to seed the picker from a preset). */
+export function colorToHex(color: DitherColor | number | string): string {
+  if (typeof color === "number") return rgbToHex(hslFill(color))
+  if (isDitherColor(color)) return rgbToHex(PALETTE[color].fill)
+  return color
 }

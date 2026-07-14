@@ -10,7 +10,7 @@ import type {
 export type SeriesRow = {
   key: string
   label: string
-  color: DitherColor | number // preset name or an arbitrary hue (0–360)
+  color: DitherColor | string // preset name or a hex colour (#rrggbb)
   variant: AreaVariant
   on: boolean
   locked: boolean

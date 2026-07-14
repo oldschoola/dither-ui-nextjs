@@ -24,7 +24,7 @@ import type { Dimensions } from "./use-chart-dimensions"
 /** Which chart root a part is composed under — drives the boundary guards. */
 export type ChartType = "area" | "bar" | "line" | "pie" | "radar"
 
-export type ChartConfig = Record<string, { label?: string; color: DitherColor | number }>
+export type ChartConfig = Record<string, { label?: string; color: DitherColor | number | string }>
 
 export type Margins = { top: number; right: number; bottom: number; left: number }
 
