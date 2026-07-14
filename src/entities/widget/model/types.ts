@@ -34,6 +34,15 @@ export type ButtonModel = {
   bloom: PixelBloomInput
 }
 
+export type ImageModel = {
+  kind: "image"
+  src: string
+  alt: string
+  cell: number
+  focusY: number // 0 top - 1 bottom crop focus
+  fade: number // px of dithered edge dissolve
+}
+
 export type GradientModel = {
   kind: "gradient"
   from: PixelColor
@@ -45,5 +54,5 @@ export type GradientModel = {
   bloom: PixelBloomInput
 }
 
-export type WidgetModel = AvatarModel | ButtonModel | GradientModel
+export type WidgetModel = AvatarModel | ButtonModel | GradientModel | ImageModel
 export type WidgetKind = WidgetModel["kind"]

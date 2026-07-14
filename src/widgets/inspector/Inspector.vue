@@ -86,6 +86,9 @@ const button = computed(() =>
 const gradient = computed(() =>
   ab.value?.widget?.kind === "gradient" ? ab.value.widget : null
 )
+const image = computed(() =>
+  ab.value?.widget?.kind === "image" ? ab.value.widget : null
+)
 const MIRRORS = ["auto", "horizontal", "vertical"] as const
 const BUTTON_VARIANTS = ["gradient", "dotted", "hatched", "solid"] as const
 const GRAD_DIRS = ["up", "down", "left", "right"] as const
@@ -330,6 +333,36 @@ function setPieVariant(v: VariantInput) {
             <ColorField :model-value="asFieldColor(button.color)" @update:model-value="button.color = $event" />
           </div>
           <BloomField :model-value="button.bloom" @update:model-value="button.bloom = $event" />
+        </section>
+      </template>
+
+      <!-- IMAGE builder -->
+      <template v-else-if="image">
+        <section class="flex flex-col gap-3">
+          <p class="text-[10px] uppercase tracking-widest text-muted-foreground">image</p>
+          <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span class="w-14 shrink-0">src</span>
+            <input v-model="image.src" type="text" name="image-src" autocomplete="off" placeholder="https://…" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-accent/60" />
+          </label>
+          <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span class="w-14 shrink-0">alt</span>
+            <input v-model="image.alt" type="text" name="image-alt" autocomplete="off" class="w-full rounded-md border border-border bg-background/60 px-2 py-1 text-xs text-foreground outline-none focus:border-accent/60" />
+          </label>
+          <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span class="w-14 shrink-0">pixel</span>
+            <input v-model.number="image.cell" type="range" name="image-cell" min="1" max="8" step="1" class="flex-1 accent-foreground" />
+            <span class="w-8 tabular-nums text-foreground">{{ image.cell }}px</span>
+          </label>
+          <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span class="w-14 shrink-0">focus</span>
+            <input v-model.number="image.focusY" type="range" name="image-focus" min="0" max="1" step="0.05" class="flex-1 accent-foreground" />
+            <span class="w-8 tabular-nums text-foreground">{{ image.focusY.toFixed(2) }}</span>
+          </label>
+          <label class="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span class="w-14 shrink-0">fade</span>
+            <input v-model.number="image.fade" type="range" name="image-fade" min="0" max="80" step="2" class="flex-1 accent-foreground" />
+            <span class="w-8 tabular-nums text-foreground">{{ image.fade }}px</span>
+          </label>
         </section>
       </template>
 

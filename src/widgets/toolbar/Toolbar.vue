@@ -13,6 +13,7 @@ import {
 import { history, redo, undo } from "@/features/history"
 import { exportArtboardPng } from "@/features/export-image"
 import { exportDocument, importDocument } from "@/features/persistence"
+import { addArtboardFromPreset, presets } from "@/features/presets"
 import type { ArtboardKind } from "@/entities/artboard"
 import { CHART_TYPES } from "@/shared/config"
 import { useTheme } from "@/shared/lib"
@@ -83,7 +84,12 @@ function doUngroup() {
         <div v-if="addOpen" role="menu" class="absolute right-0 top-full z-30 mt-1 w-32 rounded-lg border border-border bg-card p-1 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]" @pointerdown.stop>
           <button v-for="t in CHART_TYPES" :key="t" type="button" class="block w-full rounded-md px-2 py-1.5 text-left text-xs capitalize text-muted-foreground transition-colors hover:bg-background hover:text-foreground" @click="add(t)">{{ t }}</button>
           <div class="my-1 h-px bg-border" />
-          <button v-for="t in (['avatar', 'button', 'gradient'] as const)" :key="t" type="button" class="block w-full rounded-md px-2 py-1.5 text-left text-xs capitalize text-muted-foreground transition-colors hover:bg-background hover:text-foreground" @click="add(t)">{{ t }}</button>
+          <button v-for="t in (['avatar', 'button', 'gradient', 'image'] as const)" :key="t" type="button" class="block w-full rounded-md px-2 py-1.5 text-left text-xs capitalize text-muted-foreground transition-colors hover:bg-background hover:text-foreground" @click="add(t)">{{ t }}</button>
+          <template v-if="presets.length">
+            <div class="my-1 h-px bg-border" />
+            <p class="px-2 py-0.5 text-[9px] uppercase tracking-widest text-muted-foreground/60">presets</p>
+            <button v-for="p in presets" :key="p.name" type="button" class="block w-full truncate rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-background hover:text-foreground" @click="addArtboardFromPreset(p); addOpen = false">{{ p.name }}</button>
+          </template>
         </div>
       </div>
 

@@ -11,8 +11,9 @@ export type ArtboardKind = ChartType | WidgetKind
 const TITLE: Record<ArtboardKind, string> = {
   area: "Area chart", line: "Line chart", bar: "Bar chart", pie: "Pie chart",
   radar: "Radar chart", avatar: "Avatar", button: "Button", gradient: "Gradient",
+  image: "Image",
 }
-const WIDGET_KINDS: WidgetKind[] = ["avatar", "button", "gradient"]
+const WIDGET_KINDS: WidgetKind[] = ["avatar", "button", "gradient", "image"]
 const isWidgetKind = (k: ArtboardKind): k is WidgetKind =>
   (WIDGET_KINDS as string[]).includes(k)
 
@@ -21,7 +22,9 @@ export function createArtboard(kind: ArtboardKind, x = 0, y = 0): Artboard {
   const size = widget
     ? widget.kind === "button"
       ? { w: 220, h: 96 }
-      : { w: 280, h: 280 }
+      : widget.kind === "image"
+        ? { w: 320, h: 240 }
+        : { w: 280, h: 280 }
     : { w: 520, h: 360 }
   return {
     id: uid(),

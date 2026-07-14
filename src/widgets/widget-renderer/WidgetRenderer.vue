@@ -2,7 +2,7 @@
 import { computed } from "vue"
 import { editor } from "@/entities/editor"
 import type { WidgetModel } from "@/entities/widget"
-import { DitherAvatar, DitherButton, DitherGradient } from "@dither-kit"
+import { DitherAvatar, DitherButton, DitherGradient, DitherImage } from "@dither-kit"
 
 const props = defineProps<{ widget: WidgetModel }>()
 const rt = computed(() => editor.replayToken)
@@ -40,6 +40,19 @@ const w = computed(() => props.widget)
       class="px-6 py-3 text-sm"
       >{{ w.label }}</DitherButton
     >
+  </div>
+
+  <!-- IMAGE — fills the frame -->
+  <div v-else-if="w.kind === 'image'" class="relative h-full w-full overflow-hidden rounded-md">
+    <DitherImage
+      :key="`${w.src}-${w.cell}-${w.focusY}-${w.fade}`"
+      :src="w.src"
+      :alt="w.alt"
+      :cell="w.cell"
+      :focus-y="w.focusY"
+      :fade="w.fade"
+      class="h-full w-full"
+    />
   </div>
 
   <!-- GRADIENT — fills the frame -->

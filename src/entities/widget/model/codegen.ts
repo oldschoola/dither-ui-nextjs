@@ -1,4 +1,4 @@
-import type { WidgetModel } from "./types"
+import type { PixelBloomInput, WidgetModel } from "./types"
 
 const q = (s: string) => `"${s}"`
 const objLit = (o: Record<string, unknown>) =>
@@ -9,7 +9,7 @@ const objLit = (o: Record<string, unknown>) =>
 const colorAttr = (name: string, v: unknown): string =>
   typeof v === "number" ? ` :${name}="${v}"` : ` ${name}="${v}"`
 
-function bloomAttr(bloom: WidgetModel["bloom"]): string {
+function bloomAttr(bloom: PixelBloomInput): string {
   if (bloom === "off") return ""
   if (typeof bloom === "string") return ` bloom="${bloom}"`
   return ` :bloom="${objLit(bloom as unknown as Record<string, unknown>)}"`
@@ -52,6 +52,25 @@ import { DitherButton } from "@dither-kit"
 
 <template>
   <DitherButton${attrStr}>${w.label}</DitherButton>
+</template>`
+  }
+
+  if (w.kind === "image") {
+    const attrs: string[] = [`src="${w.src.slice(0, 80)}${w.src.length > 80 ? "…" : ""}"`]
+    if (w.alt) attrs.push(`alt="${w.alt}"`)
+    if (w.cell !== 3) attrs.push(`:cell="${w.cell}"`)
+    if (w.focusY !== 0.5) attrs.push(`:focus-y="${w.focusY}"`)
+    if (w.fade !== 0) attrs.push(`:fade="${w.fade}"`)
+    return `<script setup lang="ts">
+import { DitherImage } from "@dither-kit"
+</script>
+
+<template>
+  <div class="h-64">
+    <DitherImage
+${attrs.map((a) => `      ${a}`).join("\n")}
+    />
+  </div>
 </template>`
   }
 

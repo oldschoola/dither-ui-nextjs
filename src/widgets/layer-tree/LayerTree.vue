@@ -19,6 +19,7 @@ import {
   setGroupLocked,
   ungroup,
 } from "@/entities/editor"
+import { savePreset } from "@/features/presets"
 import { cssColor } from "@dither-kit"
 import { ContextMenu, type MenuItem } from "@/shared/ui"
 
@@ -168,6 +169,15 @@ function artboardItems(a: Artboard): MenuItem[] {
   return [
     { label: "Rename", onClick: () => startRename(a.id, a.name) },
     { label: "Duplicate", onClick: () => { if (!isSel(a.id)) selectArtboard(a.id); duplicateSelected() } },
+    ...(!a.widget
+      ? [{
+          label: "Save as preset",
+          onClick: () => {
+            const name = window.prompt("Preset name", a.name)
+            if (name) savePreset(name, a)
+          },
+        }]
+      : []),
     { divider: true },
     { label: "Group selection", onClick: () => { if (!isSel(a.id)) selectArtboard(a.id); groupSelected() } },
     ...(a.groupId ? [{ label: "Ungroup", onClick: () => ungroup(a.groupId!) }] : []),
