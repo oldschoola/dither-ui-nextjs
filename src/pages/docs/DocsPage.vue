@@ -113,17 +113,21 @@ const DOT_VARIANTS: DotVariant[] = ["border", "colored-border", "filled"]
 // bumps the chart's replay token, so the kit's own dither entrance IS the
 // transition — no CSS theatre required.
 const picked = reactive({
-  area: "gradient" as AreaVariant,
+  area: "gradient" as AreaVariant | number,
   bar: "gradient" as AreaVariant,
   pie: "gradient" as AreaVariant,
   dot: "border" as DotVariant,
 })
 const galleryReplay = reactive({ area: 0, bar: 0, pie: 0, line: 0 })
 
-function pick(section: "area" | "bar" | "pie", v: AreaVariant) {
-  picked[section] = v
+function pick(section: "area" | "bar" | "pie", v: AreaVariant | number) {
+  picked[section] = v as never
   galleryReplay[section]++
 }
+
+// Seed-generative textures: one integer, one deterministic texture.
+const SEEDS = [7, 1984, 4242, 90210, 31337]
+const randomSeed = () => pick("area", Math.floor(Math.random() * 1_000_000))
 function pickDot(v: DotVariant) {
   picked.dot = v
   galleryReplay.line++
@@ -220,6 +224,7 @@ const API: Record<string, PropRow[]> = {
     { prop: "animation-duration", type: "number", default: "900" },
     { prop: "bloom", type: '"off" | "low" | "high" | "aura"', default: '"off"' },
     { prop: "margins", type: "Partial<Margins>", default: "{}" },
+    { prop: "variant (series)", type: "name | TextureConfig | number (seed)", default: '"gradient"' },
   ],
   pie: [
     { prop: "data / config", type: "Row[] / ChartConfig", default: "—" },
@@ -573,7 +578,12 @@ cssColor("blue") // rgb(53,143,243)`,
 
 // Code tabs mirror the picked variant — what you see is what you copy.
 const areaCode = computed(() =>
-  SNIPPETS.area.replace('data-key="revenue" variant="gradient"', `data-key="revenue" variant="${picked.area}"`)
+  SNIPPETS.area.replace(
+    'data-key="revenue" variant="gradient"',
+    typeof picked.area === "number"
+      ? `data-key="revenue" :variant="${picked.area}"  <!-- a seed — deterministic -->`
+      : `data-key="revenue" variant="${picked.area}"`
+  )
 )
 const lineCode = computed(() => SNIPPETS.line.replace('variant="border"', `variant="${picked.dot}"`))
 const barCode = computed(() =>
@@ -1027,6 +1037,24 @@ const gradientCode = computed(
               <button v-for="v in VARIANTS" :key="v" type="button" :aria-pressed="picked.area === v" :class="thumbClass(picked.area === v)" @click="pick('area', v)">
                 <Sparkline :data="wave" color="blue" :variant="v" class="pointer-events-none h-14 w-full" />
                 <div :class="thumbLabel(picked.area === v)">{{ v }}</div>
+              </button>
+            </div>
+            <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">seed-generative</h3>
+            <p class="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+              A number is a seed: the same deterministic idea as the avatar,
+              applied to texture. <code class="text-foreground/80">:variant="1984"</code>
+              renders the same fill on every chart, forever.
+            </p>
+            <div class="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
+              <button v-for="s in SEEDS" :key="s" type="button" :aria-pressed="picked.area === s" :class="thumbClass(picked.area === s)" @click="pick('area', s)">
+                <Sparkline :data="wave" color="blue" :variant="s" class="pointer-events-none h-14 w-full" />
+                <div :class="thumbLabel(picked.area === s)" class="tabular-nums">{{ s }}</div>
+              </button>
+              <button type="button" :class="thumbClass(typeof picked.area === 'number' && !SEEDS.includes(picked.area))" class="grid content-center" @click="randomSeed">
+                <div class="text-center text-[13px] text-muted-foreground" aria-hidden="true">~</div>
+                <div :class="thumbLabel(typeof picked.area === 'number' && !SEEDS.includes(picked.area))" class="tabular-nums">
+                  {{ typeof picked.area === 'number' && !SEEDS.includes(picked.area) ? picked.area : 'random' }}
+                </div>
               </button>
             </div>
             <PropsTable :rows="API.cartesian" />

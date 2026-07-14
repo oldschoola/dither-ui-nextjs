@@ -21,6 +21,11 @@ This folder is the product; the `src/` app is its showcase and editor.
   fill/line/star hues. Swatch CSS vars in `src/app/styles.css` mirror it.
 - `pixel.ts` owns BAYER4 and bloom presets; every dithered surface thresholds
   against the same matrix.
+- `resolveTexture` in `dither-paint.ts` is the single variant seam:
+  `VariantInput = name preset | TextureConfig | number`. A number is a SEED —
+  `textureFromSeed` (mulberry32) generates deterministic texture params, same
+  seed = same fill everywhere, like the avatar. Extend textures here, never
+  in per-component paint loops.
 - `gesture.ts` owns swipe math (Apple-style `project`, `rubberband`,
   `velocityFrom`) — any swipeable surface (drawer, sheet, future carousels)
   uses these, never re-derives them. Gesture rules: 1:1 tracking with

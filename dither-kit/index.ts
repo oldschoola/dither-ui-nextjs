@@ -116,7 +116,7 @@ export type {
   TextureConfig,
   VariantInput,
 } from "./dither-paint"
-export { resolveTexture } from "./dither-paint"
+export { resolveTexture, textureFromSeed } from "./dither-paint"
 export { cubicBezier, EASINGS, resolveEasing } from "./dither-paint"
 export type { DotVariant } from "./dot-paint"
 export type { DitherColor } from "./palette"
@@ -131,3 +131,11 @@ export {
 } from "./palette"
 export type { PixelBloom, PixelBloomConfig, PixelBloomInput, PixelColor } from "./pixel"
 export type { StackType } from "./scales"
+export {
+  type AvatarPattern,
+  clampGrid,
+  normalizePattern,
+  patternFromImage,
+  patternFromPixels,
+  seededPattern,
+} from "./avatar-pattern"

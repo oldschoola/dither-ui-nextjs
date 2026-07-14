@@ -35,7 +35,7 @@ export type TextureConfig = {
   offTier?: number // 0–1: alpha of unlit cells when gaps is false (default 0.4)
   edge?: number // 0–1: top border-line alpha (default 0.72)
 }
-export type VariantInput = AreaVariant | TextureConfig
+export type VariantInput = AreaVariant | TextureConfig | number
 
 const TEXTURE_PRESET: Record<AreaVariant, Required<TextureConfig>> = {
   gradient: { ramp: 1, density: 0, gaps: false, hatch: 0, offTier: OFF_TIER, edge: BORDER_ALPHA },
@@ -46,16 +46,51 @@ const TEXTURE_PRESET: Record<AreaVariant, Required<TextureConfig>> = {
   solid: { ramp: 1, density: 2, gaps: false, hatch: 0, offTier: OFF_TIER, edge: BORDER_ALPHA },
 }
 
+// --- seed-generative textures ------------------------------------------------
+// A number variant is a seed: the same deterministic principle as the avatar —
+// one integer, one texture, identical on every surface that renders it.
+
+/** mulberry32 — tiny deterministic PRNG, good enough for texture params. */
+function mulberry32(seed: number) {
+  let a = seed >>> 0
+  return () => {
+    a |= 0
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/** Generate a texture from a seed — params stay inside the readable band so
+ * every seed yields a usable fill, never an invisible or blown-out one. */
+export function textureFromSeed(seed: number): Required<TextureConfig> {
+  const rand = mulberry32(Math.round(seed))
+  const gaps = rand() < 0.35
+  const hatch = rand() < 0.4 ? 3 + Math.floor(rand() * 4) : 0
+  return {
+    ramp: 0.45 + rand() * 0.55,
+    density: gaps ? 0.08 + rand() * 0.2 : rand() * 0.5,
+    gaps,
+    hatch,
+    offTier: OFF_TIER * (0.6 + rand() * 0.9),
+    edge: BORDER_ALPHA * (0.7 + rand() * 0.3),
+  }
+}
+
 // Single-slot memo — the paint loops resolve per column, per frame.
 let lastTexKey: VariantInput | string = ""
 let lastTex: Required<TextureConfig> = TEXTURE_PRESET.gradient
 
-/** Resolve a preset name or a custom config to the full texture. */
+/** Resolve a preset name, a seed number, or a custom config to the full texture. */
 export function resolveTexture(input: VariantInput): Required<TextureConfig> {
   if (typeof input === "string") return TEXTURE_PRESET[input] ?? TEXTURE_PRESET.gradient
   if (input !== lastTexKey) {
     lastTexKey = input
-    lastTex = { ...TEXTURE_PRESET.gradient, ...input }
+    lastTex =
+      typeof input === "number"
+        ? textureFromSeed(input)
+        : { ...TEXTURE_PRESET.gradient, ...input }
   }
   return lastTex
 }
