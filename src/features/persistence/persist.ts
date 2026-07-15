@@ -1,6 +1,6 @@
 import { reactive, watch, type WatchHandle } from "vue"
 import { createArtboard, normalizeArtboard } from "@/entities/artboard"
-import { editor, selectArtboard } from "@/entities/editor"
+import { editor, placeArtboard, selectArtboard } from "@/entities/editor"
 import { resetHistory } from "@/features/history"
 
 /**
@@ -104,10 +104,10 @@ function applyDoc(d: Doc | null): void {
     if (valid.viewport) editor.viewport = valid.viewport
     selectArtboard(editor.artboards[0].id)
   } else {
-    editor.artboards = [createArtboard("area", 0, 0)]
+    editor.artboards = []
     editor.groups = []
     editor.viewport = { x: 96, y: 88, zoom: 1 }
-    selectArtboard(editor.artboards[0].id)
+    placeArtboard(createArtboard("area"))
   }
   editor.dataOpen = false
 }

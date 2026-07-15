@@ -54,6 +54,9 @@ describe("project workspace (sequential story)", () => {
     // fresh default doc, not the legacy artboards
     expect(editor.artboards.map((a) => a.id)).not.toEqual(before)
     expect(editor.artboards).toHaveLength(1)
+    expect(editor.artboards[0].name).toBe("Area chart")
+    expect(editor.artboards[0].x).not.toBe(0)
+    expect(editor.artboards[0].y).not.toBe(0)
   })
 
   it("switching back restores the first project's work untouched", () => {
@@ -82,5 +85,7 @@ describe("project workspace (sequential story)", () => {
     expect(projects).toHaveLength(1)
     expect(projects[0].name).toBe("My project")
     expect(editor.artboards).toHaveLength(1)
+    expect(editor.artboards[0].x).not.toBe(0)
+    expect(editor.artboards[0].y).not.toBe(0)
   })
 })
