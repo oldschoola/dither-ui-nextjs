@@ -608,7 +608,7 @@ const config = {
 </div>
 <!-- from/to: any DitherColor · direction: up · down · left · right
      cell: px per dither cell · opacity: 0…1 -->`,
-  image: `<DitherImage src="/sprites.png" :cell="3" :focus-y="0.62" :fade="72"
+  image: `<DitherImage src="/sprites.webp" :cell="3" :focus-y="0.62" :fade="72"
   alt="The dither-ui sprite sheet, re-dithered" class="h-64 w-full" />
 <!-- cell: px per dither cell · fade: dithered edge dissolve
      focus-y: cover-crop focus (0 top … 1 bottom) -->`,
@@ -1441,7 +1441,7 @@ const gradientCode = computed(
             </p>
             <DemoCard :code="SNIPPETS.image">
               <DitherImage
-                src="/sprites.png"
+                src="/sprites.webp"
                 alt="The dither-ui sprite sheet, re-dithered"
                 :cell="3"
                 :focus-y="0.62"

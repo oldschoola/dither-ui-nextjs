@@ -13,7 +13,7 @@ widgets/features; page-specific conventions live here.
   visual. Additions must remove something or justify their presence.
 - Load choreography: `.reveal` stagger (0/90/180/300ms), disabled under
   `prefers-reduced-motion`.
-- Sprite sheet (`public/sprites.png`) crops are MEASURED constants
+- Sprite crops (`public/faces.webp` band + `public/sprites.webp`) crops are MEASURED constants
   (`FACES`, emote boxes, `FACE_Y/FACE_H`); if the sheet changes, re-measure
   programmatically in the browser (density-scan pattern) — never eyeball.
 - Sheet background chroma-key: rgb(5,5,7), threshold 48.

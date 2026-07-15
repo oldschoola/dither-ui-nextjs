@@ -19,17 +19,18 @@ const swatches: DitherColor[] = ["green", "blue", "purple", "pink", "orange", "r
 
 const openStudio = () => (window.location.hash = "#/studio")
 
-// Portraits + their reaction emotes, both cropped from the sprite sheet —
-// boxes measured from the source png. Hover a face, her mood answers.
-const FACE_Y = 766
+// Portraits + their reaction emotes, cropped from faces.webp — a thin band
+// sliced out of the source sheet (rows 766..900) so the landing loads ~70KB
+// instead of the full 2MB sheet. Y boxes are relative to the band (source − 766).
+const FACE_Y = 0
 const FACE_H = 126
 const FACES = [
-  { x: 29, w: 97, emote: { x: 1503, y: 791, w: 51, h: 49 } }, // neutral → …
-  { x: 147, w: 97, emote: { x: 1273, y: 793, w: 42, h: 38 } }, // smile → heart
-  { x: 262, w: 95, emote: { x: 1270, y: 858, w: 36, h: 41 } }, // blush → sparkles
-  { x: 378, w: 98, emote: { x: 1529, y: 864, w: 25, h: 27 } }, // wink → note
-  { x: 497, w: 96, emote: { x: 1458, y: 790, w: 20, h: 47 } }, // surprised → !
-  { x: 832, w: 94, emote: { x: 1334, y: 789, w: 40, h: 40 } }, // excited → star
+  { x: 29, w: 97, emote: { x: 1503, y: 25, w: 51, h: 49 } }, // neutral → …
+  { x: 147, w: 97, emote: { x: 1273, y: 27, w: 42, h: 38 } }, // smile → heart
+  { x: 262, w: 95, emote: { x: 1270, y: 92, w: 36, h: 41 } }, // blush → sparkles
+  { x: 378, w: 98, emote: { x: 1529, y: 98, w: 25, h: 27 } }, // wink → note
+  { x: 497, w: 96, emote: { x: 1458, y: 24, w: 20, h: 47 } }, // surprised → !
+  { x: 832, w: 94, emote: { x: 1334, y: 23, w: 40, h: 40 } }, // excited → star
 ]
 
 const faceEls = ref<HTMLCanvasElement[]>([])
@@ -53,7 +54,7 @@ function blit(c: HTMLCanvasElement, img: HTMLImageElement, x: number, y: number,
 
 onMounted(() => {
   const img = new Image()
-  img.src = "/sprites.png"
+  img.src = "/faces.webp"
   img.onload = () => {
     FACES.forEach((f, i) => {
       const face = faceEls.value[i]
