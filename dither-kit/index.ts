@@ -114,6 +114,7 @@ export type {
   EasingInput,
   EasingName,
   EdgeEffectParams,
+  Glyph,
   TextureConfig,
   VariantInput,
 } from "./dither-paint"
@@ -122,6 +123,7 @@ export {
   easingFromSeed,
   effectFromSeed,
   geometryFromSeed,
+  glyphFromSeed,
   kitFromSeed,
   matrixFromSeed,
   motionFromSeed,

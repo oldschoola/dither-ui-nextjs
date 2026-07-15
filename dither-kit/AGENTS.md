@@ -31,9 +31,11 @@ This folder is the product; the `src/` app is its showcase and editor.
   live in `TextureConfig` and seed with the texture. The live-edge effect is
   GENERATIVE, not a preset: `effectFromSeed` returns `EdgeEffectParams` (drift
   x/y, gravity, twinkle, trail, spread, flow, burst) — a point in a continuous
-  motion space, so seeds yield infinitely many behaviors (sparkle/rain/comet
-  are just regions). ONE particle loop renders any point; add motion by
-  widening the param space, NEVER by adding a branch. The `effect` prop is a
+  motion space — and `glyphFromSeed` returns the particle SHAPE (a `Glyph`:
+  core + seeded rays → dot, plus, x, streak, asterisk). Seeds yield infinitely
+  many behaviors AND shapes (sparkle/rain/comet are just regions). ONE particle
+  loop stamps any glyph moving any way; add variety by widening the param
+  space or glyph generator, NEVER by adding a branch. The `effect` prop is a
   NUMBER seed that pins the motion independent of the master seed (else master
   seed, else a gentle default). Sparkle character (twinkle freq, star
   brightness/burst, crosshair alpha) still seeds via `sparklesFromSeed` for the

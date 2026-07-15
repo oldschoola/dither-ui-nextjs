@@ -818,10 +818,11 @@ const gradientCode = computed(
             </DemoCard>
             <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">live-edge motion</h3>
             <p class="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-              The live edge isn't a preset — it's a point in a continuous motion
-              space (drift, gravity, twinkle, trail, flow). A dedicated
-              <code class="text-foreground/80">:effect</code> seed samples one of
-              infinitely many; roll for a fresh motion.
+              The live edge isn't a preset — it's a point in a continuous space
+              of motion (drift, gravity, twinkle, trail, flow) AND particle
+              shape (a generated glyph: dot, plus, x, streak, asterisk). A
+              dedicated <code class="text-foreground/80">:effect</code> seed
+              samples one of infinitely many; roll for a fresh one.
             </p>
             <div class="mt-4 rounded-lg border border-border/60 p-4">
               <div class="h-44">

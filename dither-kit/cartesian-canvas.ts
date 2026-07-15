@@ -20,6 +20,8 @@ import {
   colNoise,
   sparklesFromSeed,
   effectFromSeed,
+  glyphFromSeed,
+  type Glyph,
   mulberry32,
 } from "./dither-paint"
 import { rgb } from "./palette"
@@ -39,6 +41,7 @@ type LoopArgs = {
   stars: Box<Star[]>
   spark: Box<ReturnType<typeof sparklesFromSeed> | { twinkleFreq: number; starBase: number; starRange: number; burstThreshold: number; starCrossAlpha: number; crosshairAlpha: number }>
   effect: Box<ReturnType<typeof effectFromSeed>>
+  glyph: Box<Glyph>
 }
 
 /**
@@ -58,6 +61,7 @@ function startCartesianLoop({
   stars,
   spark,
   effect,
+  glyph,
 }: LoopArgs): (() => void) | undefined {
   const c = canvas.getContext("2d")
   if (!c || cols <= 0 || rows <= 0) return undefined
@@ -305,8 +309,25 @@ function startCartesianLoop({
       const tw = 1 - fx.twinkleAmt + fx.twinkleAmt * osc
       const lift = tw * (fx.brightBase + 0.3 * intensity)
       if (lift < 0.4) continue
-      c.fillStyle = rgb(col, 1, lift)
-      c.fillRect(sx, sy, 1, 1)
+      // Stamp the seeded glyph — a dot, plus, x, streak or asterisk. Arms grow
+      // at brightness peaks (the burst folded into the shape itself).
+      const grow = fx.burst > 0.15 && tw > 0.85
+      for (const gp of glyph.current) {
+        const gx = sx + gp.dx
+        const gy = sy + gp.dy
+        if (gx < 0 || gx > revealCols || gy < 0 || gy >= rows) continue
+        c.fillStyle = rgb(col, 1, lift * gp.a)
+        c.fillRect(gx, gy, 1, 1)
+        // Burst: extend each arm one cell further at a peak.
+        if (grow && (gp.dx !== 0 || gp.dy !== 0)) {
+          const ex = sx + gp.dx * 2
+          const ey = sy + gp.dy * 2
+          if (ex >= 0 && ex <= revealCols && ey >= 0 && ey < rows) {
+            c.fillStyle = rgb(col, 1, lift * fx.burst * (tw - 0.85) * 6)
+            c.fillRect(ex, ey, 1, 1)
+          }
+        }
+      }
       // Trail behind the motion vector (dir from drift signs).
       if (fx.trail > 0) {
         const dxs = fx.driftX >= 0 ? -1 : 1
@@ -318,15 +339,6 @@ function startCartesianLoop({
           c.fillStyle = rgb(col, 1, lift * (1 - t / (fx.trail + 1)) * 0.7)
           c.fillRect(tx, ty, 1, 1)
         }
-      }
-      // Burst: a cross flare at brightness peaks, scaled by the seed.
-      if (fx.burst > 0.15 && tw > 0.85) {
-        const b = lift * fx.burst * (tw - 0.85) * 8
-        c.fillStyle = rgb(col, 1, b)
-        if (sx - 1 >= 0) c.fillRect(sx - 1, sy, 1, 1)
-        if (sx + 1 <= revealCols) c.fillRect(sx + 1, sy, 1, 1)
-        if (sy - 1 >= 0) c.fillRect(sx, sy - 1, 1, 1)
-        if (sy + 1 < rows) c.fillRect(sx, sy + 1, 1, 1)
       }
     }
   }
@@ -385,8 +397,9 @@ export const CartesianCanvas = defineComponent({
     // Generative live-edge motion. A dedicated `effect` seed pins it; else the
     // master seed drives it; else a gentle sparkle-like default (steady, no
     // drift, light twinkle) so unseeded charts keep the classic feel.
+    const effectKey = () => ctx.effect ?? ctx.seed
     const effect = computed(() => {
-      const s = ctx.effect ?? ctx.seed
+      const s = effectKey()
       return s !== undefined
         ? effectFromSeed(s)
         : {
@@ -402,6 +415,11 @@ export const CartesianCanvas = defineComponent({
             brightBase: 0.7,
             speed: 1,
           }
+    })
+    // The particle shape — seeded from the same key; default is a plain dot.
+    const glyph = computed(() => {
+      const s = effectKey()
+      return s !== undefined ? glyphFromSeed(s) : [{ dx: 0, dy: 0, a: 1 }]
     })
 
     const stars = computed<Star[]>(() => {
@@ -464,6 +482,7 @@ export const CartesianCanvas = defineComponent({
         stars: starsBox,
         spark: { get current() { return spark.value } },
         effect: { get current() { return effect.value } },
+        glyph: { get current() { return glyph.value } },
       })
     }
 

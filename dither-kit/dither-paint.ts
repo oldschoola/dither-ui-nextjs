@@ -203,6 +203,37 @@ export type EdgeEffectParams = {
   speed: number // global time multiplier
 }
 
+/** A particle glyph — the pixel stamp drawn at each particle. Built
+ * generatively: a lit core plus N rays at seeded angles and lengths, so the
+ * shape ranges from a single dot to a plus, an x, a streak, or a many-armed
+ * asterisk. Each pixel carries a relative alpha so arms fade outward. */
+export type Glyph = { dx: number; dy: number; a: number }[]
+
+export function glyphFromSeed(seed: number): Glyph {
+  const rand = mulberry32(Math.round(seed) ^ 0x68e31da4)
+  const out: Glyph = [{ dx: 0, dy: 0, a: 1 }] // core pixel
+  const rays = Math.floor(rand() ** 1.3 * 6) // 0..5, skewed toward fewer
+  if (rays === 0) return out
+  const len = 1 + Math.floor(rand() * 2) // 1..2
+  const angle0 = rand() * Math.PI * 2
+  const symmetric = rand() < 0.7 // most glyphs are radially even
+  const seen = new Set<string>(["0,0"])
+  for (let r = 0; r < rays; r++) {
+    const ang = symmetric
+      ? angle0 + (r / rays) * Math.PI * 2
+      : angle0 + rand() * Math.PI * 2
+    for (let l = 1; l <= len; l++) {
+      const dx = Math.round(Math.cos(ang) * l)
+      const dy = Math.round(Math.sin(ang) * l)
+      const k = `${dx},${dy}`
+      if (seen.has(k)) continue
+      seen.add(k)
+      out.push({ dx, dy, a: 1 - (l / (len + 1)) * 0.55 })
+    }
+  }
+  return out
+}
+
 /** Sample a generative edge effect from a seed — an infinite space of motions,
  * not a choice among presets. Ranges are bounded so no seed is unreadable. */
 export function effectFromSeed(seed: number): EdgeEffectParams {
