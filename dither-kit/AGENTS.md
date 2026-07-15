@@ -28,12 +28,16 @@ This folder is the product; the `src/` app is its showcase and editor.
   colors. The dither MATRIX itself is seeded (`matrixFromSeed` /
   `resolveMatrix`, mirrored as `pixelMatrixFromSeed`) — the threshold pattern
   varies per seed. Luminance coefficients (alphaFloor/alphaRange/intensityLift)
-  live in `TextureConfig` and seed with the texture. Live-edge effects are a
-  FAMILY of six (`EdgeEffect`: sparkle, rain, rise, scan, pulse, comet) chosen
-  by `effectFromSeed` or forced via the cartesian `effect` prop (explicit >
-  seed > sparkle), each rendered as a branch in the canvas draw loop. Sparkle
-  character (twinkle freq, star brightness/burst, crosshair alpha) seeds via
-  `sparklesFromSeed`; the master `seed` flows to the cartesian canvas through
+  live in `TextureConfig` and seed with the texture. The live-edge effect is
+  GENERATIVE, not a preset: `effectFromSeed` returns `EdgeEffectParams` (drift
+  x/y, gravity, twinkle, trail, spread, flow, burst) — a point in a continuous
+  motion space, so seeds yield infinitely many behaviors (sparkle/rain/comet
+  are just regions). ONE particle loop renders any point; add motion by
+  widening the param space, NEVER by adding a branch. The `effect` prop is a
+  NUMBER seed that pins the motion independent of the master seed (else master
+  seed, else a gentle default). Sparkle character (twinkle freq, star
+  brightness/burst, crosshair alpha) still seeds via `sparklesFromSeed` for the
+  crosshair; the master `seed` flows to the cartesian canvas through
   `ChartContextValue.seed` so star positions AND render coefficients derive
   from it. The ENTRANCE reveal is seeded (`revealFromSeed`): jitter=0 is a
   clean sweep (optionally reversed), higher jitter dissolves the fill so it

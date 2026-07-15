@@ -81,7 +81,7 @@ export type ChartContextValue = {
   bloom: BloomInput
   bloomOnHover: boolean
   seed: number | undefined
-  effect: import("./dither-paint").EdgeEffect | undefined
+  effect: number | undefined
   seriesSpecs: Record<string, SeriesSpec>
   registerSeries: (spec: SeriesSpec) => void
   unregisterSeries: (dataKey: string) => void
@@ -186,7 +186,7 @@ export type ControllerInput = {
   bloom: () => BloomInput
   bloomOnHover: () => boolean
   seed: () => number | undefined
-  effect: () => import("./dither-paint").EdgeEffect | undefined
+  effect: () => number | undefined
   defaultSelectedDataKey: string | null
   onSelectionChange?: (key: string | null) => void
 }

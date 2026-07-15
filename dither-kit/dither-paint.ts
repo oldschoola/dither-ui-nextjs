@@ -184,26 +184,47 @@ export function sparklesFromSeed(seed: number) {
   }
 }
 
-/** The family of live-edge effects a chart can wear. Each is pixel-native and
- * reads the same particle pool or value-line surface. */
-export type EdgeEffect = "sparkle" | "rain" | "rise" | "scan" | "pulse" | "comet"
-export const EDGE_EFFECTS: EdgeEffect[] = ["sparkle", "rain", "rise", "scan", "pulse", "comet"]
+/** A live-edge effect is NOT a preset — it's a point in a continuous motion
+ * space. Every field blends: near-zero drift + high twinkle reads as classic
+ * sparkle; strong +driftY + low twinkle becomes rain; edge-locked flow + long
+ * trail becomes a comet; and the space between/beyond is infinite novel motion.
+ * The same seed always lands the same point, so it stays reproducible. */
+export type EdgeEffectParams = {
+  driftX: number // horizontal velocity (cells per time unit)
+  driftY: number // vertical velocity
+  gravity: number // acceleration added to driftY over a particle's life
+  twinkleAmt: number // 0–1: how much brightness oscillates
+  twinkleFreq: number // oscillation speed
+  trail: number // trailing pixels behind the motion vector
+  spread: number // 0–1: vertical scatter within the fill band
+  flow: number // 0 = ride the value line, 1 = fill the whole band
+  burst: number // 0–1: cross-burst intensity at brightness peaks
+  brightBase: number // baseline brightness
+  speed: number // global time multiplier
+}
 
-/** Seeded edge effect — picks WHICH animation type plays on the live fill and
- * its motion character (speed, trail length, glow depth). A named type can be
- * forced; a seed picks one deterministically. */
-export function effectFromSeed(seed: number): {
-  type: EdgeEffect
-  speed: number
-  tail: number
-  glow: number
-} {
+/** Sample a generative edge effect from a seed — an infinite space of motions,
+ * not a choice among presets. Ranges are bounded so no seed is unreadable. */
+export function effectFromSeed(seed: number): EdgeEffectParams {
   const rand = mulberry32(Math.round(seed) ^ 0x7f4a7c15)
+  // Bias drift toward zero (most seeds are gentle) with an occasional strong
+  // current — cube keeps the middle calm and the tails lively.
+  const signed = () => {
+    const u = rand() * 2 - 1
+    return u * u * u
+  }
   return {
-    type: EDGE_EFFECTS[Math.floor(rand() * EDGE_EFFECTS.length)],
-    speed: 0.6 + rand() * 1.2, // motion rate multiplier
-    tail: 8 + Math.floor(rand() * 14), // comet trail / particle spread
-    glow: 0.5 + rand() * 0.5, // pulse depth / scan brightness
+    driftX: signed() * 2.4,
+    driftY: signed() * 2.4,
+    gravity: signed() * 0.8,
+    twinkleAmt: rand() ** 1.5, // skew toward less twinkle
+    twinkleFreq: 0.08 + rand() * 0.5,
+    trail: Math.round(rand() ** 2 * 16), // usually short, sometimes long
+    spread: 0.15 + rand() * 0.85,
+    flow: rand(),
+    burst: rand() ** 2, // bursts are rare
+    brightBase: 0.4 + rand() * 0.45,
+    speed: 0.5 + rand() * 1.3,
   }
 }
 

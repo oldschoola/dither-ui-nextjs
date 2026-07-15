@@ -259,7 +259,7 @@ const API: Record<string, PropRow[]> = {
     { prop: "animation-duration", type: "number (ms)", default: "900" },
     { prop: "animation-delay", type: "number (ms)", default: "0" },
     { prop: "replay-token", type: "number — bump to re-run", default: "0" },
-    { prop: "effect", type: '"sparkle" | "rain" | "rise" | "scan" | "pulse" | "comet"', default: "seed pick / sparkle" },
+    { prop: "effect", type: "number — dedicated edge-motion seed", default: "master seed / gentle" },
   ],
   button: [
     { prop: "color", type: "DitherColor | number", default: '"blue"' },
@@ -405,9 +405,10 @@ const replayToken = ref(0)
 const motionDuration = ref(900)
 const DURATIONS = [300, 900, 2000]
 
-// Live-edge effect family — six types, each seeded, or forced via :effect.
-const EDGE_EFFECTS = ["sparkle", "rain", "rise", "scan", "pulse", "comet"] as const
-const edgeEffect = ref<(typeof EDGE_EFFECTS)[number]>("sparkle")
+// Generative live-edge motion — a dedicated effect seed samples an infinite
+// space of behaviors; roll for a fresh one.
+const effectSeed = ref(7)
+const rollEffect = () => (effectSeed.value = Math.floor(Math.random() * 1_000_000))
 const effectData = MONTHS.map((month, i) => ({
   month,
   v: 8 + Math.sin(i * 0.7) * 3 + Math.sin(i * 1.9) * 1.5 + i * 0.4,
@@ -815,27 +816,22 @@ const gradientCode = computed(
                 </div>
               </div>
             </DemoCard>
-            <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">live-edge effects</h3>
+            <h3 class="mt-8 text-[10px] uppercase tracking-[0.25em] text-muted-foreground/70">live-edge motion</h3>
             <p class="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-              Sparkle is one of six — a seed picks the type and its motion, or
-              force it with <code class="text-foreground/80">:effect</code>.
+              The live edge isn't a preset — it's a point in a continuous motion
+              space (drift, gravity, twinkle, trail, flow). A dedicated
+              <code class="text-foreground/80">:effect</code> seed samples one of
+              infinitely many; roll for a fresh motion.
             </p>
             <div class="mt-4 rounded-lg border border-border/60 p-4">
               <div class="h-44">
-                <LineChart :data="effectData" :config="effectConfig" :effect="edgeEffect" :interactive="false">
+                <LineChart :key="effectSeed" :data="effectData" :config="effectConfig" :effect="effectSeed" :interactive="false">
                   <Line data-key="v" />
                 </LineChart>
               </div>
-              <div class="mt-4 flex flex-wrap items-center justify-center gap-1 rounded-md border border-border/60 p-1">
-                <button
-                  v-for="e in EDGE_EFFECTS"
-                  :key="e"
-                  type="button"
-                  :aria-pressed="edgeEffect === e"
-                  class="rounded px-2.5 py-1 text-[11px] capitalize transition-colors"
-                  :class="edgeEffect === e ? 'bg-card text-foreground' : 'text-muted-foreground hover:text-foreground'"
-                  @click="edgeEffect = e"
-                >{{ e }}</button>
+              <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+                <DitherButton color="blue" variant="gradient" @click="rollEffect">Roll a motion</DitherButton>
+                <span class="font-mono text-[11px] text-muted-foreground tabular-nums">effect: {{ effectSeed }}</span>
               </div>
             </div>
             <PropsTable :rows="API.motion" />

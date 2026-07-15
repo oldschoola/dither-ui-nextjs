@@ -272,126 +272,62 @@ function startCartesianLoop({
     }
 
     if (!s.sparkles) return
+    // Generative particle field — one loop, infinite motions. Each particle
+    // drifts by the seeded velocity + gravity, twinkles, and trails; where it
+    // lands in the band is blended by `flow` between the value line and free
+    // scatter. Classic sparkle/rain/comet are just regions of this space.
     const fx = effect.current
-    const sxOf = (xi: number) => Math.round((xi / Math.max(s.dataLength - 1, 1)) * (cols - 1))
-
-    // === sparkle: winking stars that burst a cross (the original) ===
-    if (fx.type === "sparkle") {
-      for (const star of stars.current) {
-        const cur = current[star.key]
-        if (!cur) continue
-        const sx = sxOf(star.xi)
-        if (sx > revealCols) continue
-        const top = cur.top[sx] ?? 0
-        const floor = cur.floor[sx] ?? rows - 1
-        const sy = Math.round(top + star.depth * (floor - top))
-        const tw = reduce ? 0.85 : (Math.sin((tick + star.phase) * spark.current.twinkleFreq) + 1) / 2
-        const lift = tw * (spark.current.starBase + spark.current.starRange * intensity)
-        if (lift < 0.55 || sy < 0 || sy >= rows) continue
-        const col = s.seedOf(star.key).fill
-        c.fillStyle = rgb(col, 1, lift)
-        c.fillRect(sx, sy, 1, 1)
-        if (tw > spark.current.burstThreshold) {
-          c.fillStyle = rgb(col, 1, lift * spark.current.starCrossAlpha * (tw - spark.current.burstThreshold) * 10)
-          c.fillRect(sx - 1, sy, 1, 1)
-          c.fillRect(sx + 1, sy, 1, 1)
-          c.fillRect(sx, sy - 1, 1, 1)
-          c.fillRect(sx, sy + 1, 1, 1)
-        }
-      }
-      return
-    }
-
-    // === rain / rise: particles fall or float through the fill band ===
-    if (fx.type === "rain" || fx.type === "rise") {
-      const rate = reduce ? 0 : tick * fx.speed * 0.018
-      for (const star of stars.current) {
-        const cur = current[star.key]
-        if (!cur) continue
-        const sx = sxOf(star.xi)
-        if (sx > revealCols) continue
-        const top = cur.top[sx] ?? 0
-        const floor = cur.floor[sx] ?? rows - 1
-        const band = Math.max(1, floor - top)
-        const p = ((rate + star.phase * 0.02 + star.depth) % 1 + 1) % 1
-        const prog = fx.type === "rain" ? p : 1 - p
-        const sy = Math.round(top + prog * band)
-        if (sy < 0 || sy >= rows) continue
-        const head = fx.type === "rain" ? 1 - prog : prog // brightest where it enters
-        const col = s.seedOf(star.key).fill
-        c.fillStyle = rgb(col, 1, (0.35 + 0.65 * head) * (0.7 + 0.3 * intensity))
-        c.fillRect(sx, sy, 1, 1)
-        // one-pixel trail behind the drop
-        const ty = fx.type === "rain" ? sy - 1 : sy + 1
-        if (ty >= 0 && ty < rows) {
-          c.fillStyle = rgb(col, 1, 0.2 * head)
-          c.fillRect(sx, ty, 1, 1)
-        }
-      }
-      return
-    }
-
-    // === scan: a bright vertical line sweeps along the revealed fill ===
-    if (fx.type === "scan") {
+    const sxOf = (xi: number) => (xi / Math.max(s.dataLength - 1, 1)) * (cols - 1)
+    const T = reduce ? 0 : tick * fx.speed * 0.02
+    for (const star of stars.current) {
+      const cur = current[star.key]
+      if (!cur) continue
+      // Life clock: each particle cycles 0..1, offset by its phase.
+      const life = ((T + star.phase * 0.03) % 1 + 1) % 1
+      // Horizontal drift, wrapped across the revealed span.
       const reach = Math.max(1, Math.min(revealCols, cols - 1))
-      const scanX = reduce ? reach : Math.round((((tick * fx.speed * 0.01) % 1) + 1) % 1 * reach)
-      for (const key of s.configKeys) {
-        const cur = current[key]
-        if (!cur) continue
-        const top = Math.round(cur.top[scanX] ?? 0)
-        const floor = Math.round(cur.floor[scanX] ?? rows - 1)
-        const col = s.seedOf(key).fill
-        for (let y = top; y <= floor && y < rows; y++) {
-          if (y < 0) continue
-          c.fillStyle = rgb(col, 1, fx.glow * (0.4 + 0.6 * (1 - (y - top) / Math.max(1, floor - top))))
-          c.fillRect(scanX, y, 1, 1)
+      const baseX = sxOf(star.xi)
+      const sx = Math.round((((baseX + fx.driftX * life * reach) % (reach + 1)) + (reach + 1)) % (reach + 1))
+      if (sx > revealCols) continue
+      const top = cur.top[sx] ?? 0
+      const floor = cur.floor[sx] ?? rows - 1
+      const band = Math.max(1, floor - top)
+      // Vertical position: `flow` blends value-line-locked vs free-scatter;
+      // driftY + gravity push it through the band over its life.
+      const scatter = star.depth * fx.spread
+      const drift = fx.driftY * life + 0.5 * fx.gravity * life * life
+      const vy = ((scatter + drift) % 1 + 1) % 1
+      const sy = Math.round(top + fx.flow * vy * band)
+      if (sy < 0 || sy >= rows) continue
+      const col = s.seedOf(star.key).fill
+      // Twinkle: blends steady (twinkleAmt 0) to full wink (1).
+      const osc = reduce ? 0.85 : (Math.sin((tick + star.phase) * fx.twinkleFreq) + 1) / 2
+      const tw = 1 - fx.twinkleAmt + fx.twinkleAmt * osc
+      const lift = tw * (fx.brightBase + 0.3 * intensity)
+      if (lift < 0.4) continue
+      c.fillStyle = rgb(col, 1, lift)
+      c.fillRect(sx, sy, 1, 1)
+      // Trail behind the motion vector (dir from drift signs).
+      if (fx.trail > 0) {
+        const dxs = fx.driftX >= 0 ? -1 : 1
+        const dys = fx.driftY + fx.gravity >= 0 ? -1 : 1
+        for (let t = 1; t <= fx.trail; t++) {
+          const tx = sx + dxs * t
+          const ty = sy + (fx.flow > 0.3 ? dys * t : 0)
+          if (tx < 0 || tx > revealCols || ty < 0 || ty >= rows) break
+          c.fillStyle = rgb(col, 1, lift * (1 - t / (fx.trail + 1)) * 0.7)
+          c.fillRect(tx, ty, 1, 1)
         }
       }
-      return
-    }
-
-    // === pulse: the value line breathes brighter and dimmer ===
-    if (fx.type === "pulse") {
-      const glow = reduce ? 0.7 : (Math.sin(tick * fx.speed * 0.04) + 1) / 2
-      for (const key of s.configKeys) {
-        const cur = current[key]
-        if (!cur) continue
-        const col = s.seedOf(key).fill
-        const alpha = (0.35 + 0.5 * glow * fx.glow) * (0.8 + 0.2 * intensity)
-        for (let x = 0; x <= revealCols && x < cols; x++) {
-          const ty = Math.round(cur.top[x] ?? 0)
-          if (ty < 0 || ty >= rows) continue
-          c.fillStyle = rgb(col, 1, alpha)
-          c.fillRect(x, ty, 1, 1)
-        }
+      // Burst: a cross flare at brightness peaks, scaled by the seed.
+      if (fx.burst > 0.15 && tw > 0.85) {
+        const b = lift * fx.burst * (tw - 0.85) * 8
+        c.fillStyle = rgb(col, 1, b)
+        if (sx - 1 >= 0) c.fillRect(sx - 1, sy, 1, 1)
+        if (sx + 1 <= revealCols) c.fillRect(sx + 1, sy, 1, 1)
+        if (sy - 1 >= 0) c.fillRect(sx, sy - 1, 1, 1)
+        if (sy + 1 < rows) c.fillRect(sx, sy + 1, 1, 1)
       }
-      return
-    }
-
-    // === comet: a bright head runs the value line with a fading tail ===
-    if (fx.type === "comet") {
-      const reach = Math.max(1, Math.min(revealCols, cols - 1))
-      const headX = reduce ? reach : Math.round((((tick * fx.speed * 0.012) % 1) + 1) % 1 * reach)
-      for (const key of s.configKeys) {
-        const cur = current[key]
-        if (!cur) continue
-        const col = s.seedOf(key).fill
-        for (let t = 0; t < fx.tail; t++) {
-          const x = headX - t
-          if (x < 0 || x > revealCols) continue
-          const ty = Math.round(cur.top[x] ?? 0)
-          if (ty < 0 || ty >= rows) continue
-          const b = (1 - t / fx.tail) * (0.7 + 0.3 * intensity)
-          c.fillStyle = rgb(col, 1, b)
-          c.fillRect(x, ty, 1, 1)
-          if (t === 0) {
-            // brighter head, 1px halo
-            c.fillStyle = rgb(col, 1, Math.min(1, b + 0.3))
-            if (ty - 1 >= 0) c.fillRect(x, ty - 1, 1, 1)
-          }
-        }
-      }
-      return
     }
   }
 
@@ -446,13 +382,26 @@ export const CartesianCanvas = defineComponent({
       }
     )
 
-    // Which live-edge effect plays — explicit prop > seed pick > sparkle.
-    // The explicit prop sets the type; motion params stay seeded/default.
+    // Generative live-edge motion. A dedicated `effect` seed pins it; else the
+    // master seed drives it; else a gentle sparkle-like default (steady, no
+    // drift, light twinkle) so unseeded charts keep the classic feel.
     const effect = computed(() => {
-      const base = ctx.seed !== undefined
-        ? effectFromSeed(ctx.seed)
-        : { type: "sparkle" as const, speed: 1, tail: 12, glow: 0.7 }
-      return ctx.effect ? { ...base, type: ctx.effect } : base
+      const s = ctx.effect ?? ctx.seed
+      return s !== undefined
+        ? effectFromSeed(s)
+        : {
+            driftX: 0,
+            driftY: 0,
+            gravity: 0,
+            twinkleAmt: 1,
+            twinkleFreq: 0.35,
+            trail: 0,
+            spread: 1,
+            flow: 1,
+            burst: 0.6,
+            brightBase: 0.7,
+            speed: 1,
+          }
     })
 
     const stars = computed<Star[]>(() => {
