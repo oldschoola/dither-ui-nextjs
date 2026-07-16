@@ -16,10 +16,10 @@
   </head>
   <body>
     <h1>Dither raster benchmark</h1>
-    <p id="status">Runs six measured batches after three warmups at 960 × 600 CSS px, 2 px cells.</p>
+    <p id="status">Runs six measured batches after three warmups. Gradient samples use 960 × 600 CSS px at 2 px cells; button samples use 240 × 56 CSS px at 2 px cells.</p>
     <button id="run" type="button">Run benchmark</button>
     <table>
-      <thead><tr><th>Painter</th><th>Mean ms</th><th>Median ms</th><th>p95 ms</th><th>Canvas calls</th></tr></thead>
+      <thead><tr><th>Painter</th><th>Mean ms</th><th>Median ms</th><th>p95 ms</th><th>Canvas calls</th><th>RGBA allocations</th></tr></thead>
       <tbody id="results"></tbody>
     </table>
     <script type="module" src="./raster.ts"></script>

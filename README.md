@@ -127,12 +127,28 @@ loops, and avoids rebuilding bloom layers when the frame is unchanged.
 ### Benchmark
 
 Open `http://localhost:5173/benchmarks/` after `npm run dev`. The browser
-benchmark performs 3 warmups, then 6 measured batches × 2 repetitions at
-960×600 CSS px with 2 px cells. It compares the legacy per-cell `fillRect`
-painter with RGBA generation plus one `putImageData` upload and reports mean,
-median, p95, and canvas calls.
+benchmark performs 3 warmups, then 6 measured batches × 2 repetitions.
+Gradient samples run at 960×600 CSS px with 2 px cells and compare the legacy
+per-cell `fillRect` painter with RGBA generation plus one `putImageData` upload.
+Button samples run at 240×56 CSS px and compare fresh RGBA allocation against a
+reused target buffer. The table reports mean, median, p95, canvas calls, and
+RGBA allocation count.
 
-Five independent local Chrome runs without CPU throttling produced:
+A local Chrome run of the expanded benchmark produced:
+
+| Painter | Mean | Median | p95 | Canvas calls | RGBA allocations |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Gradient legacy fillRect | 116.81 ms | 106.10 ms | 198.00 ms | 144,000 | 12 |
+| Gradient RGBA + putImageData | 3.82 ms | 3.70 ms | 5.60 ms | 1 | 12 |
+| Button fresh RGBA buffer | 0.18 ms | 0.20 ms | 0.30 ms | 1 | 12 |
+| Button reused RGBA buffer | 0.17 ms | 0.20 ms | 0.30 ms | 1 | 1 |
+
+The gradient rows in that run show a **30.6× speedup** and **96.7% lower
+measured paint latency**. The button rows are intentionally small in wall-clock
+terms; their useful signal is allocation behavior, where reuse keeps the repeated
+RGBA buffer allocation count at one.
+
+Earlier five independent local Chrome runs without CPU throttling produced:
 
 | Run | Legacy mean | Legacy median | Legacy p95 | Raster mean | Raster median | Raster p95 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -143,12 +159,12 @@ Five independent local Chrome runs without CPU throttling produced:
 | 5 | 118.31 ms | 129.30 ms | 156.60 ms | 3.94 ms | 3.90 ms | 4.60 ms |
 | Average mean | 114.26 ms | — | — | 4.82 ms | — | — |
 
-The average means show a **23.7× speedup** and **95.8% lower measured paint
-latency**. Each legacy sample made 144,000 `fillRect` calls; each raster sample
-made one `putImageData` upload. These are directional measurements on one
-desktop, not a device-independent latency promise. Re-run the page on target
-low-power devices before choosing `cell`, animation, bloom, or precompilation
-policy.
+The earlier average means show a **23.7× speedup** and **95.8% lower measured
+paint latency**. Each legacy gradient sample made 144,000 `fillRect` calls; each
+raster gradient sample made one `putImageData` upload. These are directional
+measurements on one desktop, not a device-independent latency promise. Re-run
+the page on target low-power devices before choosing `cell`, animation, bloom,
+or precompilation policy.
 
 ### Components
 

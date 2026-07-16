@@ -60,5 +60,7 @@ frame. Keep `animate`, `sparkles`, and bloom off for static content, and use the
 precompiled path for content whose data and dimensions are known on the server.
 
 The repository benchmark is available at `/benchmarks/`; it records six measured
-batches after three warmups and reports mean, median, p95, and canvas-call count.
-See the root README for the current local baseline and reproduction command.
+batches after three warmups and reports mean, median, p95, canvas-call count, and
+RGBA allocation count. It covers the large gradient `fillRect` → `putImageData`
+path and button fresh-buffer versus reused-buffer rendering. See the root README
+for the current local baseline and reproduction command.
