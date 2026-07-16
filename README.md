@@ -15,7 +15,7 @@ control, live code export) built on the library.
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173 — the studio
+npm run dev      # http://localhost:5173 — the site; /studio is the editor
 npm run build    # type-check + production build
 ```
 
@@ -37,15 +37,19 @@ npm run build    # type-check + production build
 ```
 src/
   app/        app init, root component, global styles
-  pages/      studio page (composition root)
+  pages/      landing, docs, studio
   widgets/    canvas, layers-panel, inspector, toolbar, chart-renderer
   features/   pan-zoom, artboard-transform, export-code
   entities/   chart (model + codegen), artboard, editor (document store)
-  shared/     dither-kit (the component library), ui, lib, config
+  shared/     ui, lib, config
+
+dither-kit/
+  Vue kit source (charts, avatars, buttons, surfaces)
 ```
 
-Imports only ever point downward (app → … → shared); each slice exposes a public
-`index.ts` barrel.
+Imports inside `src/` only ever point downward (app → … → shared); each slice
+exposes a public `index.ts` barrel. The app imports the portable kit through
+`@dither-kit`.
 
 ## Usage
 
@@ -168,18 +172,21 @@ or precompilation policy.
 
 ### Components
 
+Selected public exports:
+
 | Charts | Parts | Standalone |
 | --- | --- | --- |
 | `AreaChart` `LineChart` | `Area` `Line` `Bar` `Pie` `Radar` | `DitherButton` |
-| `BarChart` | `Grid` `XAxis` `YAxis` | `DitherAvatar` |
-| `PieChart` `RadarChart` | `Dot` `ActiveDot` `Legend` `Tooltip` | `DitherGradient` |
+| `BarChart` | `Grid` `XAxis` `YAxis` | `DitherAvatar` `DitherImage` |
+| `PieChart` `RadarChart` | `Dot` `ActiveDot` `Legend` `Tooltip` | `DitherGradient` `DitherSpinner` |
 | | `Sparkline` `RadarFrame` | |
 
-Shared props: `bloom` (`off`/`low`/`high`/`aura`), `bloomOnHover`, `animate`,
-`stackType` (`default`/`stacked`/`percent`), `hovered`, `markerIndex`,
-`defaultSelectedDataKey`, `onSelectionChange`, `onHoverChange`. Fill `variant`:
-`gradient`/`dotted`/`hatched`/`solid`. Palette colors: `green` `blue` `purple`
-`pink` `orange` `red` `grey`.
+The barrel also exports the rest of the control, feedback, navigation, overlay,
+and surface set. Shared props: `bloom` (`off`/`low`/`high`/`aura`),
+`bloomOnHover`, `animate`, `stackType` (`default`/`stacked`/`percent`),
+`hovered`, `markerIndex`, `defaultSelectedDataKey`, `onSelectionChange`,
+`onHoverChange`. Fill `variant`: `gradient`/`dotted`/`hatched`/`solid`.
+Palette colors: `green` `blue` `purple` `pink` `orange` `red` `grey`.
 
 ## Port notes
 

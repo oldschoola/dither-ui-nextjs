@@ -47,9 +47,12 @@ const png = await sharp(Buffer.from(raster.data), {
 ```
 
 Pass the resulting public URL as `precompiled` to a chart root or standalone
-surface. The chart image replaces the dither canvas while its SVG and DOM
-children remain available. Use `renderMode="static"` when a client paint is
-needed but animation and resize observation are unnecessary.
+surface. The kit currently exports compilers for gradient and button rasters;
+chart, image, and spinner precompiled URLs are consumed by the kit but generated,
+encoded, cached, and invalidated by the host app. The chart image replaces the
+dither canvas while its SVG and DOM children remain available. Use
+`renderMode="static"` when a client paint is needed but animation and resize
+observation are unnecessary.
 
 ## Client cost controls
 

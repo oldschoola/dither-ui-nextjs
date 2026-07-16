@@ -226,28 +226,93 @@ const COLORS: DitherColor[] = ["green", "blue", "purple", "pink", "orange", "red
 
 const API: Record<string, PropRow[]> = {
   cartesian: [
-    { prop: "data", type: "Row[]", default: "—" },
-    { prop: "config", type: "ChartConfig", default: "—" },
+    { prop: "data", type: "Row[]", default: "required" },
+    { prop: "config", type: "ChartConfig", default: "required" },
     { prop: "stack-type", type: '"default" | "stacked" | "percent"', default: '"default"' },
+    { prop: "margins", type: "Partial<Margins>", default: "{}" },
+    { prop: "class", type: "string", default: "undefined" },
     { prop: "interactive", type: "boolean", default: "true" },
     { prop: "animate", type: "boolean", default: "true" },
-    { prop: "animation-duration", type: "number", default: "900" },
-    { prop: "bloom", type: '"off" | "low" | "high" | "aura"', default: '"off"' },
+    { prop: "seed", type: "number", default: "undefined" },
+    { prop: "effect", type: "number", default: "seed / sparkle" },
+    { prop: "animation-duration", type: "number (ms)", default: "seed / 900" },
+    { prop: "animation-delay", type: "number (ms)", default: "seed / 0" },
+    { prop: "easing", type: "name | bezier tuple | number", default: "seed / chart default" },
+    { prop: "sparkles", type: "boolean", default: "true" },
+    { prop: "hover-lift", type: "boolean", default: "true" },
+    { prop: "stagger", type: "number", default: "seed / 0.55" },
+    { prop: "cell", type: "number (px)", default: "2" },
+    { prop: "sparkle-density", type: "number", default: "seed / 1" },
+    { prop: "sparkle-speed", type: "number", default: "seed / 1" },
+    { prop: "bar-gap", type: "number", default: "seed / 0.28" },
+    { prop: "bar-edge", type: "number", default: "seed / 0.18" },
+    { prop: "glow-size", type: "number", default: "seed / 0.16" },
+    { prop: "hover-strength", type: "number", default: "seed / 1" },
+    { prop: "dim-opacity", type: "number", default: "seed / 0.3" },
+    { prop: "crosshair", type: "boolean", default: "true" },
+    { prop: "replay-token", type: "number", default: "0" },
+    { prop: "marker-index", type: "number | null", default: "null" },
+    { prop: "hovered", type: "boolean", default: "false" },
+    { prop: "bloom", type: '"off" | "low" | "high" | "aura" | object | number', default: "seed / off" },
+    { prop: "bloom-on-hover", type: "boolean", default: "false" },
     { prop: "precompiled", type: "string | { src: string } — packaged plot URL", default: "undefined" },
-    { prop: "margins", type: "Partial<Margins>", default: "{}" },
+    { prop: "default-selected-data-key", type: "string | null", default: "null" },
+    { prop: "on-hover-change", type: "(index: number | null) => void", default: "undefined" },
+    { prop: "on-selection-change", type: "(key: string | null) => void", default: "undefined" },
     { prop: "variant (series)", type: "name | TextureConfig | number (seed)", default: '"gradient"' },
   ],
   pie: [
-    { prop: "data / config", type: "Row[] / ChartConfig", default: "—" },
-    { prop: "data-key", type: "string", default: "—" },
-    { prop: "name-key", type: "string", default: "—" },
-    { prop: "inner-radius", type: "number 0…0.85", default: "0" },
-    { prop: "bloom", type: '"off" | "low" | "high" | "aura"', default: '"off"' },
+    { prop: "data", type: "Row[]", default: "required" },
+    { prop: "config", type: "ChartConfig", default: "required" },
+    { prop: "data-key", type: "string", default: '""' },
+    { prop: "name-key", type: "string", default: "required" },
+    { prop: "inner-radius", type: "number 0…0.85", default: "seed / 0" },
+    { prop: "margins", type: "Partial<Margins>", default: "{}" },
+    { prop: "class", type: "string", default: "undefined" },
+    { prop: "animate", type: "boolean", default: "true" },
+    { prop: "seed", type: "number", default: "undefined" },
+    { prop: "animation-duration", type: "number (ms)", default: "seed / 900" },
+    { prop: "animation-delay", type: "number (ms)", default: "seed / 0" },
+    { prop: "easing", type: "name | bezier tuple | number", default: "seed / ease-in-out" },
+    { prop: "hover-lift", type: "boolean", default: "true" },
+    { prop: "cell", type: "number (px)", default: "2" },
+    { prop: "pop-out", type: "number", default: "seed / 6" },
+    { prop: "rim-width", type: "number", default: "seed / 1.4" },
+    { prop: "falloff", type: "number", default: "seed / 0.45" },
+    { prop: "hover-strength", type: "number", default: "seed / 1" },
+    { prop: "dim-opacity", type: "number", default: "seed / 0.3" },
+    { prop: "start-angle", type: "number", default: "seed / 0" },
+    { prop: "replay-token", type: "number", default: "0" },
+    { prop: "bloom", type: '"off" | "low" | "high" | "aura" | object | number', default: "seed / off" },
+    { prop: "bloom-on-hover", type: "boolean", default: "false" },
+    { prop: "precompiled", type: "string | { src: string } — packaged plot URL", default: "undefined" },
+    { prop: "default-selected-data-key", type: "string | null", default: "null" },
+    { prop: "on-selection-change", type: "(key: string | null) => void", default: "undefined" },
   ],
   radar: [
-    { prop: "data / config", type: "Row[] / ChartConfig", default: "—" },
-    { prop: "name-key", type: "string", default: "—" },
-    { prop: "rings", type: "number", default: "4" },
+    { prop: "data", type: "Row[]", default: "required" },
+    { prop: "config", type: "ChartConfig", default: "required" },
+    { prop: "name-key", type: "string", default: "required" },
+    { prop: "rings", type: "number", default: "seed / 4" },
+    { prop: "margins", type: "Partial<Margins>", default: "{}" },
+    { prop: "class", type: "string", default: "undefined" },
+    { prop: "animate", type: "boolean", default: "true" },
+    { prop: "seed", type: "number", default: "undefined" },
+    { prop: "animation-duration", type: "number (ms)", default: "seed / 900" },
+    { prop: "animation-delay", type: "number (ms)", default: "seed / 0" },
+    { prop: "easing", type: "name | bezier tuple | number", default: "seed / ease-in-out" },
+    { prop: "hover-lift", type: "boolean", default: "true" },
+    { prop: "cell", type: "number (px)", default: "2" },
+    { prop: "falloff", type: "number", default: "seed / 0.45" },
+    { prop: "hover-strength", type: "number", default: "seed / 1" },
+    { prop: "dim-opacity", type: "number", default: "seed / 0.3" },
+    { prop: "start-angle", type: "number", default: "seed / 0" },
+    { prop: "replay-token", type: "number", default: "0" },
+    { prop: "bloom", type: '"off" | "low" | "high" | "aura" | object | number', default: "seed / off" },
+    { prop: "bloom-on-hover", type: "boolean", default: "false" },
+    { prop: "precompiled", type: "string | { src: string } — packaged plot URL", default: "undefined" },
+    { prop: "default-selected-data-key", type: "string | null", default: "null" },
+    { prop: "on-selection-change", type: "(key: string | null) => void", default: "undefined" },
   ],
   sparkline: [
     { prop: "data", type: "number[]", default: "—" },
@@ -265,11 +330,14 @@ const API: Record<string, PropRow[]> = {
     { prop: "effect", type: "number — dedicated edge-motion seed", default: "master seed / gentle" },
   ],
   button: [
-    { prop: "color", type: "DitherColor | number", default: '"blue"' },
-    { prop: "variant", type: '"gradient" | "dotted" | "hatched" | "solid"', default: '"gradient"' },
-    { prop: "bloom", type: '"off" | "low" | "high" | "aura"', default: '"off"' },
+    { prop: "color", type: "PixelColor", default: "seed / blue" },
+    { prop: "variant", type: '"gradient" | "dotted" | "hatched" | "solid"', default: "seed / gradient" },
+    { prop: "bloom", type: '"off" | "low" | "high" | "aura" | object | number', default: "seed / off" },
+    { prop: "cell", type: "number (px)", default: "seed / 2" },
+    { prop: "seed", type: "number", default: "undefined" },
     { prop: "type", type: '"button" | "submit" | "reset"', default: '"button"' },
     { prop: "loading / disabled", type: "boolean", default: "false" },
+    { prop: "class", type: "string", default: "undefined" },
     { prop: "render-mode", type: '"live" | "static"', default: '"live"' },
     { prop: "precompiled", type: "string | { src: string }", default: "undefined" },
   ],
@@ -282,20 +350,25 @@ const API: Record<string, PropRow[]> = {
     { prop: "bloom", type: '"off" | "low" | "high" | "aura"', default: '"off"' },
   ],
   gradient: [
-    { prop: "from", type: "DitherColor", default: "—" },
-    { prop: "to", type: 'DitherColor | "transparent"', default: '"transparent"' },
-    { prop: "direction", type: '"up" | "down" | "left" | "right"', default: '"up"' },
-    { prop: "cell", type: "number (px)", default: "3" },
-    { prop: "opacity", type: "number 0…1", default: "1" },
+    { prop: "from", type: "PixelColor", default: "seed / blue" },
+    { prop: "to", type: 'PixelColor | "transparent"', default: '"transparent"' },
+    { prop: "direction", type: '"up" | "down" | "left" | "right"', default: "seed / up" },
+    { prop: "cell", type: "number (px)", default: "seed / 3" },
+    { prop: "opacity", type: "number 0…1", default: "seed / 1" },
+    { prop: "bloom", type: '"off" | "low" | "high" | "aura" | object | number', default: "seed / off" },
+    { prop: "seed", type: "number", default: "undefined" },
+    { prop: "class", type: "string", default: "undefined" },
     { prop: "render-mode", type: '"live" | "static"', default: '"live"' },
     { prop: "precompiled", type: "string | { src: string }", default: "undefined" },
   ],
   image: [
-    { prop: "src", type: "string", default: "—" },
-    { prop: "cell", type: "number (px)", default: "3" },
-    { prop: "focus-y", type: "number 0…1", default: "0.5" },
-    { prop: "fade", type: "number (px)", default: "0" },
+    { prop: "src", type: "string", default: "required" },
+    { prop: "cell", type: "number (px)", default: "seed / 3" },
+    { prop: "focus-y", type: "number 0…1", default: "seed / 0.5" },
+    { prop: "fade", type: "number (px)", default: "seed / 0" },
+    { prop: "seed", type: "number", default: "undefined" },
     { prop: "alt", type: "string", default: '""' },
+    { prop: "class", type: "string", default: "undefined" },
     { prop: "render-mode", type: '"live" | "static"', default: '"live"' },
     { prop: "precompiled", type: "string | { src: string }", default: "undefined" },
   ],
@@ -610,9 +683,10 @@ const config = {
 <DitherButton variant="dotted">Preview</DitherButton>
 <DitherButton variant="hatched">Cancel</DitherButton>
 
-<!-- colors, bloom, disabled -->
+<!-- colors, bloom, static raster -->
 <DitherButton color="green" bloom="low">Approve</DitherButton>
-<DitherButton color="red" disabled>Delete</DitherButton>`,
+<DitherButton color="red" disabled>Delete</DitherButton>
+<DitherButton render-mode="static" precompiled="/button.png">Saved</DitherButton>`,
   avatar: `<DitherAvatar name="ada" :size="24" />
 <DitherAvatar name="ada" :size="32" />
 <DitherAvatar name="ada" :size="48" />
@@ -620,10 +694,14 @@ const config = {
   gradient: `<div class="relative h-40">
   <DitherGradient from="blue" to="transparent" direction="up" />
 </div>
+<div class="relative h-24">
+  <DitherGradient render-mode="static" precompiled="/gradient.png" />
+</div>
 <!-- from/to: any DitherColor · direction: up · down · left · right
      cell: px per dither cell · opacity: 0…1 -->`,
   image: `<DitherImage src="/sprites.webp" :cell="3" :focus-y="0.62" :fade="72"
   alt="The dither-ui sprite sheet, re-dithered" class="h-64 w-full" />
+<DitherImage precompiled="/sprites-dither.png" alt="The dither-ui sprite sheet" />
 <!-- cell: px per dither cell · fade: dithered edge dissolve
      focus-y: cover-crop focus (0 top … 1 bottom) -->`,
   palette: `import { cssColor, type DitherColor } from "@dither-kit"
@@ -650,7 +728,8 @@ const buttonCode = computed(
   () =>
     `<DitherButton color="${btn.color}" variant="${btn.variant}"${btn.bloom === "off" ? "" : ` bloom="${btn.bloom}"`}>
   Deploy
-</DitherButton>`
+</DitherButton>
+<DitherButton render-mode="static" precompiled="/button.png">Saved</DitherButton>`
 )
 const avatarCode = computed(
   () => `<DitherAvatar name="${avatarName.value}" :size="48" />
@@ -659,6 +738,9 @@ const avatarCode = computed(
 const gradientCode = computed(
   () => `<div class="relative h-40">
   <DitherGradient from="${grad.from}" to="transparent" direction="${grad.direction}" />
+</div>
+<div class="relative h-24">
+  <DitherGradient render-mode="static" precompiled="/gradient.png" />
 </div>`
 )
 </script>
@@ -1351,7 +1433,7 @@ const gradientCode = computed(
             <h2 class="text-lg tracking-tight">Button</h2>
             <p class="mt-2 text-[13px] leading-relaxed text-muted-foreground">
               Canvas-filled button; density lifts on hover, blooms on press.
-              Four fills, seven colors, optional <code class="text-foreground/80">bloom</code>.
+              Four fills, seven colors, optional <code class="text-foreground/80">bloom</code>, and static/precompiled raster paths.
             </p>
             <DemoCard :code="buttonCode">
               <div class="grid justify-items-center gap-8">
