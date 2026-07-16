@@ -52,6 +52,7 @@ export type PolarChartContextValue = {
   revision: number
   bloom: BloomInput
   bloomOnHover: boolean
+  precompiled: string | undefined
   seedOf: (key: string) => Seed
   variantOf: (key: string) => VariantInput
   registerVariant: (key: string, variant: VariantInput) => void
@@ -123,6 +124,7 @@ export type PolarControllerInput = {
   replayToken: () => number
   bloom: () => BloomInput
   bloomOnHover: () => boolean
+  precompiled: () => string | undefined
   defaultSelectedDataKey: string | null
   onSelectionChange?: (key: string | null) => void
 }
@@ -353,6 +355,9 @@ export function usePolarController(
     },
     get bloomOnHover() {
       return input.bloomOnHover()
+    },
+    get precompiled() {
+      return input.precompiled()
     },
     seedOf,
     variantOf,

@@ -27,6 +27,14 @@ export {
   type GradientDirection,
 } from "./DitherGradient.vue"
 export { default as DitherImage } from "./DitherImage.vue"
+export type { DitherRenderMode, PrecompiledDither } from "./precompile"
+export {
+  precompiledSrc,
+  renderDitherButton,
+  renderDitherGradient,
+} from "./precompile"
+export type { ButtonRasterOptions, GradientRasterOptions } from "./precompile"
+export type { RasterBuffer } from "./raster"
 
 // Form controls
 export { default as DitherSwitch } from "./DitherSwitch.vue"

@@ -5,9 +5,9 @@ ordered-dither **area, line, bar, pie and radar** charts on one tiny canvas engi
 plus generative **avatars**, **buttons**, and **gradient washes**. Charts inspired by
 [Evil Charts](https://evilcharts.com).
 
-Copy-in components (shadcn-style): the library lives in
-`src/shared/dither-kit/` with no runtime framework beyond Vue, `d3-scale`,
-`d3-shape`, `clsx` and `tailwind-merge`.
+Copy-in components (shadcn-style): the library lives in `dither-kit/` with no
+imports from the app. Its runtime dependencies are Vue, `d3-scale`, `d3-shape`,
+`clsx` and `tailwind-merge`.
 
 The repo also ships a **multi-artboard chart studio** — a Figma-style editor
 (infinite pan/zoom canvas, layers panel, contextual inspector with full granular
@@ -56,7 +56,7 @@ Charts use a **children-as-config** API — compose parts inside a root:
 import {
   AreaChart, Area, Grid, XAxis, YAxis, Legend, Tooltip,
   type ChartConfig,
-} from "@/components/dither-kit"
+} from "@dither-kit"
 
 const data = [
   { month: "Jan", desktop: 186, mobile: 80 },
@@ -84,6 +84,65 @@ const config: ChartConfig = {
 ```
 
 Roots must be given a sized container (the canvas measures its parent).
+
+### Fast And Precompiled Rendering
+
+For deterministic server-rendered surfaces, compile the dither backing store on
+the server and send its encoded image URL to the kit. The compiler has no DOM,
+canvas, or Vue dependency and returns RGBA pixels, so use the image encoder your
+server already uses:
+
+```ts
+import sharp from "sharp"
+import { renderDitherGradient } from "@dither-kit"
+
+const raster = renderDitherGradient({
+  width: 960, height: 600, cell: 2, from: "blue", to: "transparent", seed: 42,
+})
+const png = await sharp(Buffer.from(raster.data), {
+  raw: { width: raster.width, height: raster.height, channels: 4 },
+}).png().toBuffer()
+// Store png and pass its URL to the client.
+```
+
+Pass the packaged URL through `precompiled`. On charts it replaces only the
+plot canvas, so axes, legends, tooltips, and interactions can remain composed
+around it. The asset must match the chart's plot dimensions and should be
+invalidated when data, colors, dimensions, or dither props change:
+
+```vue
+<AreaChart :data="data" :config="config" :precompiled="{ src: chartPngUrl }" :animate="false">
+  <Grid /><XAxis dataKey="month" /><YAxis />
+  <Area dataKey="desktop" />
+</AreaChart>
+```
+
+`DitherGradient`, `DitherImage`, `DitherButton`, and `DitherSpinner` accept the
+same `precompiled` URL. Use `renderMode="static"` when the visual should still
+be painted in the browser but never animate or observe resizes. Without a
+packaged asset, the kit also batches gradient/button/spinner pixels through
+`ImageData`, caps chart backing resolution with `cell`, pauses off-screen chart
+loops, and avoids rebuilding bloom layers when the frame is unchanged.
+
+### Benchmark
+
+Open `http://localhost:5173/benchmarks/` after `npm run dev`. The browser
+benchmark performs 3 warmups, then 6 measured batches × 2 repetitions at
+960×600 CSS px with 2 px cells. It compares the legacy per-cell `fillRect`
+painter with RGBA generation plus one `putImageData` upload and reports mean,
+median, p95, and canvas calls.
+
+Two local Chrome runs without CPU throttling produced:
+
+| Run | Legacy mean | Raster mean | Legacy calls | Raster calls |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 118.17 ms | 4.60 ms | 144,000 | 1 |
+| 2 | 125.73 ms | 3.85 ms | 144,000 | 1 |
+| Average | 121.95 ms | 4.23 ms | 144,000 | 1 |
+
+These are directional measurements on one desktop, not a device-independent
+latency promise. Re-run the page on target low-power devices before choosing
+`cell`, animation, bloom, or precompilation policy.
 
 ### Components
 

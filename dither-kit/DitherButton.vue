@@ -1,66 +1,21 @@
 <script lang="ts">
-import { rgb } from "./palette"
+import type { PixelBloomInput, PixelColor } from "./pixel"
 import {
-  BAYER4,
-  clamp01,
-  fillOf,
-  type PixelBloomInput,
-  type PixelColor,
-  pixelPrefersReducedMotion,
-} from "./pixel"
-
+  precompiledSrc,
+  renderDitherButton,
+  type DitherRenderMode,
+  type PrecompiledDither,
+} from "./precompile"
+import { putRasterBuffer } from "./raster"
 
 export type ButtonVariant = "gradient" | "dotted" | "hatched" | "solid"
-
-type PaintState = { fill: [number, number, number]; variant: ButtonVariant }
-
-/** Paint one frame of the button fill — ordered-dither texture capped by a soft
- * outline, with `intensity` (0 rest, 1 hover, ~1.5 pressed) lifting density. */
-function paintButton(
-  ctx: CanvasRenderingContext2D,
-  bloomCtx: CanvasRenderingContext2D | null,
-  cols: number,
-  rows: number,
-  { fill, variant }: PaintState,
-  intensity: number,
-  matrix: number[][] = BAYER4
-): void {
-  ctx.clearRect(0, 0, cols, rows)
-  const bias = variant === "dotted" ? 0.12 : 0
-  for (let y = 0; y < rows; y++) {
-    const density =
-      variant === "gradient"
-        ? 0.25 + 0.75 * ((y + 0.5) / rows)
-        : variant === "dotted"
-          ? 0.5
-          : 0.75
-    for (let x = 0; x < cols; x++) {
-      if (variant === "hatched" && ((x + y) & 3) >= 2) continue
-      const lit =
-        variant === "solid" ||
-        density > matrix[y & 3][x & 3] - 0.1 * intensity - bias
-      if (variant === "dotted" && !lit) continue
-      const k = (0.3 + density * 0.7) * (1 + 0.22 * intensity)
-      ctx.fillStyle = rgb(fill, 1, clamp01(lit ? k : k * 0.4))
-      ctx.fillRect(x, y, 1, 1)
-    }
-  }
-  ctx.fillStyle = rgb(fill, 1, clamp01(0.5 + 0.25 * intensity))
-  ctx.fillRect(0, 0, cols, 1)
-  ctx.fillRect(0, rows - 1, cols, 1)
-  ctx.fillRect(0, 0, 1, rows)
-  ctx.fillRect(cols - 1, 0, 1, rows)
-  if (bloomCtx) {
-    bloomCtx.clearRect(0, 0, cols, rows)
-    bloomCtx.drawImage(ctx.canvas, 0, 0)
-  }
-}
+export type { DitherRenderMode, PrecompiledDither }
 </script>
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { cn } from "./lib"
-import { pixelBloomStyle, pixelMatrixFromSeed } from "./pixel"
+import { pixelBloomStyle, pixelPrefersReducedMotion } from "./pixel"
 import { kitFromSeed } from "./dither-paint"
 import { CONTROL_BUTTON } from "./control"
 
@@ -75,11 +30,13 @@ const props = withDefaults(
     loading?: boolean
     disabled?: boolean
     class?: string
+    renderMode?: DitherRenderMode
+    precompiled?: PrecompiledDither
   }>(),
   { type: "button", loading: false, disabled: false }
 )
 const s = computed(() => (props.seed !== undefined ? kitFromSeed(props.seed) : null))
-const matrix = computed(() => props.seed !== undefined ? pixelMatrixFromSeed(props.seed) : BAYER4)
+const precompiled = computed(() => precompiledSrc(props.precompiled))
 const color = computed<PixelColor>(() => props.color ?? s.value?.hue ?? "blue")
 const variant = computed<ButtonVariant>(() => props.variant ?? s.value?.variant ?? "gradient")
 const bloom = computed<PixelBloomInput>(
@@ -101,8 +58,8 @@ function init(): (() => void) | undefined {
   if (!button || !canvas || !ctx) return undefined
   const bloomCanvas = bloomRef.value
   const bloomCtx = bloomCanvas?.getContext("2d") ?? null
-  const state: PaintState = { fill: fillOf(color.value), variant: variant.value }
   const reduce = pixelPrefersReducedMotion()
+  const animated = props.renderMode !== "static" && !reduce
 
   let cols = 0
   let rows = 0
@@ -111,7 +68,22 @@ function init(): (() => void) | undefined {
   let hovered = false
   let raf = 0
 
-  const paint = () => paintButton(ctx, bloomCtx, cols, rows, state, intensity, matrix.value)
+  const paint = () => {
+    const raster = renderDitherButton({
+      width: cols,
+      height: rows,
+      color: color.value,
+      variant: variant.value,
+      cell: 1,
+      intensity,
+      seed: props.seed,
+    })
+    putRasterBuffer(ctx, raster)
+    if (bloomCanvas && bloomCtx) {
+      bloomCtx.clearRect(0, 0, cols, rows)
+      bloomCtx.drawImage(canvas, 0, 0)
+    }
+  }
 
   const tick = () => {
     const d = target - intensity
@@ -131,7 +103,7 @@ function init(): (() => void) | undefined {
     if (reduce) {
       intensity = t
       paint()
-    } else if (!raf) {
+    } else if (animated && !raf) {
       raf = requestAnimationFrame(tick)
     }
   }
@@ -161,14 +133,18 @@ function init(): (() => void) | undefined {
   }
   const down = () => { if (!button.disabled) setTarget(1.5) }
   const up = () => setTarget(hovered ? 1 : 0)
-  button.addEventListener("pointerenter", enter)
-  button.addEventListener("pointerleave", leave)
-  button.addEventListener("pointerdown", down)
-  button.addEventListener("pointerup", up)
-  button.addEventListener("pointercancel", up)
+  if (animated) {
+    button.addEventListener("pointerenter", enter)
+    button.addEventListener("pointerleave", leave)
+    button.addEventListener("pointerdown", down)
+    button.addEventListener("pointerup", up)
+    button.addEventListener("pointercancel", up)
+  }
 
   const ro =
-    typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null
+    props.renderMode !== "static" && typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(resize)
+      : null
   ro?.observe(button)
 
   return () => {
@@ -185,7 +161,7 @@ function init(): (() => void) | undefined {
 onMounted(() => {
   teardown = init()
 })
-watch([color, variant, bloom, cell, matrix, () => props.loading, () => props.disabled], () => {
+watch([color, variant, bloom, cell, precompiled, () => props.loading, () => props.disabled], () => {
   teardown?.()
   teardown = init()
 })
@@ -206,7 +182,16 @@ onBeforeUnmount(() => teardown?.())
       )
     "
   >
+    <img
+      v-if="precompiled"
+      :src="precompiled"
+      alt=""
+      aria-hidden="true"
+      class="absolute inset-0 -z-10 h-full w-full object-fill"
+      style="image-rendering: pixelated"
+    />
     <canvas
+      v-else
       ref="canvasRef"
       aria-hidden="true"
       class="absolute inset-0 -z-10 h-full w-full"

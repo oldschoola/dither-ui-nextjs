@@ -1,6 +1,7 @@
 <script lang="ts">
 import { rgb } from "./palette"
 import type { Rgb } from "./palette"
+import { blendRasterPixel, clearRasterBuffer, createRasterBuffer, putRasterBuffer, type RasterBuffer } from "./raster"
 import {
   BAYER4,
   fillOf,
@@ -82,14 +83,15 @@ function squareT(sx: number, sy: number): number {
  * SHAPE, its brightness by FLOW, then carve detail and dither. `phase` (0..1)
  * advances over time. */
 function paintSpinner(
-  ctx: CanvasRenderingContext2D,
+  ctx: CanvasRenderingContext2D | RasterBuffer,
   cells: number,
   fill: Rgb,
   phase: number,
   matrix: number[][] = BAYER4,
   p: SpinnerParams = SPINNER_DEFAULT
 ): void {
-  ctx.clearRect(0, 0, cells, cells)
+  if ("data" in ctx) clearRasterBuffer(ctx)
+  else ctx.clearRect(0, 0, cells, cells)
   const c = cells / 2
   const half = c - 0.5
   const arc = Math.max(0.05, Math.min(1, p.arc))
@@ -133,22 +135,29 @@ function paintSpinner(
       if (p.spokes > 0 && p.shape !== 2)
         bright *= 0.35 + 0.65 * Math.abs(Math.cos((ang * p.spokes) / 2)) ** 2
       if (bright <= 0 || bright <= matrix[y & 3][x & 3]) continue
-      ctx.fillStyle = rgb(fill, 1, 0.4 + 0.6 * bright)
-      ctx.fillRect(x, y, 1, 1)
+      const alpha = 0.4 + 0.6 * bright
+      if ("data" in ctx) blendRasterPixel(ctx, x, y, fill, alpha)
+      else {
+        ctx.fillStyle = rgb(fill, 1, alpha)
+        ctx.fillRect(x, y, 1, 1)
+      }
     }
   }
 }
 </script>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useCanvasVisibility } from "./use-visibility"
+import { precompiledSrc, type DitherRenderMode, type PrecompiledDither } from "./precompile"
 
 const props = withDefaults(
   defineProps<{
     size?: number
     color?: PixelColor
     seed?: number
+    renderMode?: DitherRenderMode
+    precompiled?: PrecompiledDither
   }>(),
   { size: 20, color: "blue" }
 )
@@ -156,6 +165,7 @@ const props = withDefaults(
 const spin = props.seed !== undefined ? spinnerFromSeed(props.seed) : SPINNER_DEFAULT
 const matrix = props.seed !== undefined ? pixelMatrixFromSeed(props.seed) : BAYER4
 
+const precompiled = computed(() => precompiledSrc(props.precompiled))
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 let teardown: (() => void) | undefined
@@ -165,6 +175,7 @@ const isVisible = useCanvasVisibility(canvasRef, () => wake?.())
 
 function init(): (() => void) | undefined {
   const canvas = canvasRef.value
+  if (precompiled.value) return undefined
   const ctx = canvas?.getContext("2d")
   if (!canvas || !ctx) return undefined
   const fill = fillOf(props.color)
@@ -174,11 +185,13 @@ function init(): (() => void) | undefined {
 
   let raf = 0
   let last = 0
+  const buffer = createRasterBuffer(cells, cells)
 
-  paintSpinner(ctx, cells, fill, 0, matrix, spin)
+  paintSpinner(buffer, cells, fill, 0, matrix, spin)
+  putRasterBuffer(ctx, buffer)
 
   wake = undefined
-  if (!pixelPrefersReducedMotion()) {
+  if (props.renderMode !== "static" && !pixelPrefersReducedMotion()) {
     const frame = (now: number) => {
       if (!isVisible()) {
         raf = 0
@@ -187,7 +200,8 @@ function init(): (() => void) | undefined {
       raf = requestAnimationFrame(frame)
       if (now - last < 33) return // ~30fps
       last = now
-      paintSpinner(ctx, cells, fill, (now * spin.speed) % 1, matrix, spin)
+      paintSpinner(buffer, cells, fill, (now * spin.speed) % 1, matrix, spin)
+      putRasterBuffer(ctx, buffer)
     }
     wake = () => {
       if (!raf) raf = requestAnimationFrame(frame)
@@ -204,7 +218,7 @@ onMounted(() => {
   teardown = init()
 })
 watch(
-  () => [props.size, props.color],
+  () => [props.size, props.color, props.renderMode, precompiled.value],
   () => {
     teardown?.()
     teardown = init()
@@ -215,7 +229,18 @@ onBeforeUnmount(() => teardown?.())
 
 <template>
   <span role="status" aria-label="Loading" class="inline-flex">
+    <img
+      v-if="precompiled"
+      :src="precompiled"
+      alt=""
+      :style="{
+        width: `${props.size}px`,
+        height: `${props.size}px`,
+        imageRendering: 'pixelated',
+      }"
+    />
     <canvas
+      v-else
       ref="canvasRef"
       :style="{
         width: `${props.size}px`,

@@ -8,6 +8,7 @@ import {
   watch,
 } from "vue"
 import { type ChartContextValue, useChart } from "./chart-context"
+import { clearRasterBuffer, createRasterBuffer, putRasterBuffer } from "./raster"
 import { useCanvasVisibility } from "./use-visibility"
 import {
   backingSize,
@@ -68,9 +69,10 @@ function startBarLoop({
   }
 
   let intensity = 0
+  const frame = createRasterBuffer(cols, rows)
   const paint = (prog: number) => {
     const s = state.current
-    c.clearRect(0, 0, cols, rows)
+    clearRasterBuffer(frame)
     const stacked = s.stackType === "stacked" || s.stackType === "percent"
     const keys = s.configKeys
     keys.forEach((key, si) => {
@@ -93,7 +95,7 @@ function startBarLoop({
         const c0 = Math.round(slot.x * fx)
         const c1 = Math.round((slot.x + slot.width) * fx)
         for (let x = c0; x < c1; x++) {
-          paintColumn(c, x, top, base, seed, {
+          paintColumn(frame, x, top, base, seed, {
             variant,
             intensity: intensity + (active ? 0.4 : 0),
             dim: selDim * hoverDim,
@@ -121,14 +123,6 @@ function startBarLoop({
     raf = requestAnimationFrame(draw)
     const s = state.current
     if (!s.ready) return
-    if (bloomCtx) {
-      const on =
-        s.bloom !== "off" && (!s.bloomOnHover || s.isMouseInChart || s.hovered)
-      if (on) {
-        bloomCtx.clearRect(0, 0, cols, rows)
-        bloomCtx.drawImage(canvas, 0, 0)
-      }
-    }
     if (s.revision !== lastRevision) {
       lastRevision = s.revision
       animStart = 0
@@ -169,6 +163,12 @@ function startBarLoop({
 
     if (!needsFill) return
     paint(prog)
+    c.clearRect(0, 0, cols, rows)
+    putRasterBuffer(c, frame)
+    if (bloomCtx && s.bloom !== "off" && (!s.bloomOnHover || s.isMouseInChart || s.hovered)) {
+      bloomCtx.clearRect(0, 0, cols, rows)
+      bloomCtx.drawImage(canvas, 0, 0)
+    }
     needsFill = false
   }
 
@@ -245,16 +245,24 @@ export const BarCanvas = defineComponent({
     onBeforeUnmount(() => loop?.stop())
 
     return () => {
-      const bloomActive = ctx.bloomOnHover
-        ? ctx.isMouseInChart || ctx.hovered
-        : true
-      const bloom = bloomLayerStyle(ctx.bloom, bloomActive)
       const pos = {
         left: `${ctx.margins.left}px`,
         top: `${ctx.margins.top}px`,
         width: `${ctx.plot.width}px`,
         height: `${ctx.plot.height}px`,
       }
+      if (ctx.precompiled) {
+        return h("img", {
+          src: ctx.precompiled,
+          alt: "Chart",
+          class: "pointer-events-none absolute",
+          style: { ...pos, imageRendering: "pixelated" },
+        })
+      }
+      const bloomActive = ctx.bloomOnHover
+        ? ctx.isMouseInChart || ctx.hovered
+        : true
+      const bloom = bloomLayerStyle(ctx.bloom, bloomActive)
       return [
         h("canvas", {
           ref: canvasRef,

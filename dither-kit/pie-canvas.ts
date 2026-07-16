@@ -137,13 +137,6 @@ function startPieLoop({
     raf = requestAnimationFrame(draw)
     const s = state.current
     if (!s.ready || !s.pie) return
-    if (bloomCtx) {
-      const on = s.bloom !== "off" && (!s.bloomOnHover || s.isMouseInChart)
-      if (on) {
-        bloomCtx.clearRect(0, 0, cols, rows)
-        bloomCtx.drawImage(canvas, 0, 0)
-      }
-    }
     if (s.revision !== lastRevision) {
       lastRevision = s.revision
       animStart = 0
@@ -189,6 +182,10 @@ function startPieLoop({
 
     if (!needsFill) return
     paint(prog)
+    if (bloomCtx && s.bloom !== "off" && (!s.bloomOnHover || s.isMouseInChart)) {
+      bloomCtx.clearRect(0, 0, cols, rows)
+      bloomCtx.drawImage(canvas, 0, 0)
+    }
     needsFill = false
   }
 
@@ -244,16 +241,24 @@ export const PieCanvas = defineComponent({
     onBeforeUnmount(() => loop?.stop())
 
     return () => {
-      const bloom = bloomLayerStyle(
-        ctx.bloom,
-        ctx.bloomOnHover ? ctx.isMouseInChart : true
-      )
       const pos = {
         left: `${ctx.margins.left}px`,
         top: `${ctx.margins.top}px`,
         width: `${ctx.plot.width}px`,
         height: `${ctx.plot.height}px`,
       }
+      if (ctx.precompiled) {
+        return h("img", {
+          src: ctx.precompiled,
+          alt: "Chart",
+          class: "pointer-events-none absolute",
+          style: { ...pos, imageRendering: "pixelated" },
+        })
+      }
+      const bloom = bloomLayerStyle(
+        ctx.bloom,
+        ctx.bloomOnHover ? ctx.isMouseInChart : true
+      )
       return [
         h("canvas", {
           ref: canvasRef,

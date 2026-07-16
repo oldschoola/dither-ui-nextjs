@@ -233,6 +233,7 @@ const API: Record<string, PropRow[]> = {
     { prop: "animate", type: "boolean", default: "true" },
     { prop: "animation-duration", type: "number", default: "900" },
     { prop: "bloom", type: '"off" | "low" | "high" | "aura"', default: '"off"' },
+    { prop: "precompiled", type: "string | { src: string } — packaged plot URL", default: "undefined" },
     { prop: "margins", type: "Partial<Margins>", default: "{}" },
     { prop: "variant (series)", type: "name | TextureConfig | number (seed)", default: '"gradient"' },
   ],
@@ -269,6 +270,8 @@ const API: Record<string, PropRow[]> = {
     { prop: "bloom", type: '"off" | "low" | "high" | "aura"', default: '"off"' },
     { prop: "type", type: '"button" | "submit" | "reset"', default: '"button"' },
     { prop: "loading / disabled", type: "boolean", default: "false" },
+    { prop: "render-mode", type: '"live" | "static"', default: '"live"' },
+    { prop: "precompiled", type: "string | { src: string }", default: "undefined" },
   ],
   avatar: [
     { prop: "name", type: "string", default: "—" },
@@ -284,6 +287,8 @@ const API: Record<string, PropRow[]> = {
     { prop: "direction", type: '"up" | "down" | "left" | "right"', default: '"up"' },
     { prop: "cell", type: "number (px)", default: "3" },
     { prop: "opacity", type: "number 0…1", default: "1" },
+    { prop: "render-mode", type: '"live" | "static"', default: '"live"' },
+    { prop: "precompiled", type: "string | { src: string }", default: "undefined" },
   ],
   image: [
     { prop: "src", type: "string", default: "—" },
@@ -291,6 +296,8 @@ const API: Record<string, PropRow[]> = {
     { prop: "focus-y", type: "number 0…1", default: "0.5" },
     { prop: "fade", type: "number (px)", default: "0" },
     { prop: "alt", type: "string", default: '""' },
+    { prop: "render-mode", type: '"live" | "static"', default: '"live"' },
+    { prop: "precompiled", type: "string | { src: string }", default: "undefined" },
   ],
   palette: [
     { prop: "cssColor(c)", type: "(DitherColor | number) → css string", default: "—" },

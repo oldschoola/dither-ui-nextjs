@@ -4,6 +4,7 @@ import { nextTick } from "vue"
 import { describe, expect, it, vi } from "vitest"
 import DitherBadge from "../../dither-kit/DitherBadge.vue"
 import DitherButton from "../../dither-kit/DitherButton.vue"
+import DitherGradient from "../../dither-kit/DitherGradient.vue"
 import DitherDialog from "../../dither-kit/DitherDialog.vue"
 import DitherField from "../../dither-kit/DitherField.vue"
 import DitherInput from "../../dither-kit/DitherInput.vue"
@@ -13,6 +14,14 @@ import DitherCheckbox from "../../dither-kit/DitherCheckbox.vue"
 import DitherSwitch from "../../dither-kit/DitherSwitch.vue"
 import DitherTabs from "../../dither-kit/DitherTabs.vue"
 import { dismiss, toast, toasts } from "../../dither-kit/toast"
+
+describe("precompiled surfaces", () => {
+  it("uses the packaged image without creating a canvas", () => {
+    const w = mount(DitherGradient, { props: { precompiled: "/assets/gradient.webp" } })
+    expect(w.find("img").attributes("src")).toBe("/assets/gradient.webp")
+    expect(w.find("canvas").exists()).toBe(false)
+  })
+})
 
 describe("DitherButton", () => {
   it("renders slot content in a native button", () => {

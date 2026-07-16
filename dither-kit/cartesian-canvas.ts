@@ -25,6 +25,7 @@ import {
   mulberry32,
 } from "./dither-paint"
 import { rgb } from "./palette"
+import { clearRasterBuffer, createRasterBuffer, putRasterBuffer } from "./raster"
 
 type Star = { key: string; xi: number; depth: number; phase: number }
 type Surface = { top: number[]; floor: number[] }
@@ -68,11 +69,7 @@ function startCartesianLoop({
   canvas.width = cols
   canvas.height = rows
 
-  const off = document.createElement("canvas")
-  off.width = cols
-  off.height = rows
-  const octx = off.getContext("2d")
-  if (!octx) return undefined
+  const frame = createRasterBuffer(cols, rows)
 
   const bloomCtx = bloomCanvas?.getContext("2d") ?? null
   if (bloomCanvas) {
@@ -87,7 +84,7 @@ function startCartesianLoop({
   const current: Record<string, Surface> = {}
 
   const paintFill = (intensity: number, reveal: number) => {
-    octx.clearRect(0, 0, cols, rows)
+    clearRasterBuffer(frame)
     const s = state.current
     const stacked = s.stackType === "stacked" || s.stackType === "percent"
     // Seeded reveal: a clean sweep by default, a scattered dissolve when the
@@ -119,7 +116,7 @@ function startCartesianLoop({
           const base = rev.reverse ? 1 - x / cols : x / cols
           if (base + (colNoise(x, seedInt) - 0.5) * rev.jitter > reveal) continue
         }
-        paintColumn(octx, x, cur.top[x] ?? 0, cur.floor[x] ?? 0, seed, {
+        paintColumn(frame, x, cur.top[x] ?? 0, cur.floor[x] ?? 0, seed, {
           variant,
           intensity,
           dim,
@@ -150,14 +147,6 @@ function startCartesianLoop({
     raf = requestAnimationFrame(draw)
     const s = state.current
     if (!s.ready) return
-    if (bloomCtx) {
-      const on =
-        s.bloom !== "off" && (!s.bloomOnHover || s.isMouseInChart || s.hovered)
-      if (on) {
-        bloomCtx.clearRect(0, 0, cols, rows)
-        bloomCtx.drawImage(canvas, 0, 0)
-      }
-    }
     const tgt = targets.current
     if (s.revision !== lastRevision) {
       lastRevision = s.revision
@@ -259,7 +248,7 @@ function startCartesianLoop({
       needsFill = false
     }
     c.clearRect(0, 0, cols, rows)
-    c.drawImage(off, 0, 0)
+    putRasterBuffer(c, frame)
 
     const mx =
       marker != null && s.dataLength > 1
@@ -278,7 +267,13 @@ function startCartesianLoop({
       }
     }
 
-    if (!s.sparkles) return
+    if (!s.sparkles) {
+      if (bloomCtx && s.bloom !== "off" && (!s.bloomOnHover || s.isMouseInChart || s.hovered)) {
+        bloomCtx.clearRect(0, 0, cols, rows)
+        bloomCtx.drawImage(canvas, 0, 0)
+      }
+      return
+    }
     // Generative particle field — one loop, infinite motions. Each particle
     // drifts by the seeded velocity + gravity, twinkles, and trails; where it
     // lands in the band is blended by `flow` between the value line and free
@@ -343,6 +338,10 @@ function startCartesianLoop({
           c.fillRect(tx, ty, 1, 1)
         }
       }
+    }
+    if (bloomCtx && s.bloom !== "off" && (!s.bloomOnHover || s.isMouseInChart || s.hovered)) {
+      bloomCtx.clearRect(0, 0, cols, rows)
+      bloomCtx.drawImage(canvas, 0, 0)
     }
   }
 
@@ -499,16 +498,24 @@ export const CartesianCanvas = defineComponent({
     onBeforeUnmount(() => loop?.stop())
 
     return () => {
-      const bloomActive = ctx.bloomOnHover
-        ? ctx.isMouseInChart || ctx.hovered
-        : true
-      const bloom = bloomLayerStyle(ctx.bloom, bloomActive)
       const pos = {
         left: `${ctx.margins.left}px`,
         top: `${ctx.margins.top}px`,
         width: `${ctx.plot.width}px`,
         height: `${ctx.plot.height}px`,
       }
+      if (ctx.precompiled) {
+        return h("img", {
+          src: ctx.precompiled,
+          alt: "Chart",
+          class: "pointer-events-none absolute",
+          style: { ...pos, imageRendering: "pixelated" },
+        })
+      }
+      const bloomActive = ctx.bloomOnHover
+        ? ctx.isMouseInChart || ctx.hovered
+        : true
+      const bloom = bloomLayerStyle(ctx.bloom, bloomActive)
       return [
         h("canvas", {
           ref: canvasRef,

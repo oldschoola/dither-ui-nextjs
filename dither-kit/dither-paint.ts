@@ -3,7 +3,8 @@
 // chart type reads with the exact same pixel texture.
 
 import type { AreaVariant } from "./chart-context"
-import { rgb, type Seed } from "./palette"
+import { rgb, type Rgb, type Seed } from "./palette"
+import { blendRasterPixel, type RasterBuffer } from "./raster"
 
 // 4×4 ordered (Bayer) matrix, normalized to 0–1 thresholds — the exact matrix
 // the legacy chart dithers with.
@@ -315,6 +316,16 @@ export function resolveTexture(input: VariantInput): Required<TextureConfig> {
   return lastTex
 }
 
+export type PaintTarget = CanvasRenderingContext2D | RasterBuffer
+
+function paintPixel(target: PaintTarget, x: number, y: number, color: Rgb, alpha: number): void {
+  if ("data" in target) blendRasterPixel(target, x, y, color, alpha)
+  else {
+    target.fillStyle = rgb(color, 1, alpha)
+    target.fillRect(x, y, 1, 1)
+  }
+}
+
 export type PaintOpts = {
   variant: VariantInput
   intensity: number // 0–1 hover lift
@@ -343,7 +354,7 @@ export type PaintOpts = {
  * the dither look across area / line / bar.
  */
 export function paintColumn(
-  octx: CanvasRenderingContext2D,
+  octx: PaintTarget,
   x: number,
   top: number,
   floor: number,
@@ -356,8 +367,7 @@ export function paintColumn(
   const f = Math.round(floor)
   const depth = f - t
   if (depth <= 0) {
-    octx.fillStyle = rgb(seed.fill, 1, tex.edge * dim)
-    octx.fillRect(x, t, 1, 1)
+    paintPixel(octx, x, t, seed.fill, tex.edge * dim)
     return
   }
   const bias = tex.density + (stacked ? 0.2 : 0) - sparse
@@ -378,19 +388,14 @@ export function paintColumn(
     // Density → alpha (see the colour-vs-opacity note above).
     const k = (tex.alphaFloor + density * tex.alphaRange) * (1 + tex.intensityLift * intensity)
     const alpha = clamp01((lit ? k : k * tex.offTier) * dim)
-    octx.fillStyle = rgb(seed.fill, 1, alpha)
-    octx.fillRect(x, y, 1, 1)
+    paintPixel(octx, x, y, seed.fill, alpha)
   }
   // Top border outline — the shape's edge now that the fill fades out here.
   // Kept just under full opacity, with a faint feather row beneath, so it reads
   // as a soft edge rather than a hard line floating over the fade.
   if (tex.edge > 0) {
-    octx.fillStyle = rgb(seed.fill, 1, tex.edge * dim)
-    octx.fillRect(x, t, 1, 1)
-    if (depth > 1) {
-      octx.fillStyle = rgb(seed.fill, 1, tex.edge * 0.5 * dim)
-      octx.fillRect(x, t + 1, 1, 1)
-    }
+    paintPixel(octx, x, t, seed.fill, tex.edge * dim)
+    if (depth > 1) paintPixel(octx, x, t + 1, seed.fill, tex.edge * 0.5 * dim)
   }
 }
 
