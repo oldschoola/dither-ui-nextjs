@@ -80,7 +80,7 @@ Default section order:
   `dither-kit/` (the portable component library) and `src/` (site + studio).
   `dither-next/` is a parallel Next.js/React port — same dither engine,
   complete: `dither-next/dither-kit/` is the React port of `dither-kit/`
-  (75 components + engine), `dither-next/src/` is the app in FSD with
+  (71 React components (+ chart infrastructure)), `dither-next/src/` is the app in FSD with
   `views/` instead of `pages/` (Next.js reserves `src/pages/` for the Pages
   Router), and `dither-next/app/` holds the App Router routes. It does not
   touch the Vue app, which stays the source of truth.
@@ -133,9 +133,9 @@ Default section order:
   contracts, a11y floor
   - `src/pages/AGENTS.md` — landing/docs/studio page conventions
 - `dither-next/AGENTS.md` — the Next.js/React port: full port (engine +
-  75 React components, app shell, landing, docs, studio; framework-agnostic
-  TS ported verbatim, Vue reactivity → React contexts/hooks, FSD `views/`
-  instead of `pages/`)
+  71 React components (+ chart infrastructure), app shell, landing, docs,
+  studio; framework-agnostic TS ported verbatim, Vue reactivity → React
+  contexts/hooks, FSD `views/` instead of `pages/`)
 <CRITICAL_INSTRUCTION>
 
 ## BACKLOG WORKFLOW INSTRUCTIONS
