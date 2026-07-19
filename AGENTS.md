@@ -78,12 +78,16 @@ Default section order:
 
 - dither-ui: a dithered UI toolkit for Vue (dither-ui.com). Two halves:
   `dither-kit/` (the portable component library) and `src/` (site + studio).
-  `dither-next/` is an in-progress Next.js/React port (engine ported; components
-  and app pages follow) — it does not touch the Vue app.
+  `dither-next/` is a parallel Next.js/React port — same dither engine,
+  complete: `dither-next/dither-kit/` is the React port of `dither-kit/`
+  (75 components + engine), `dither-next/src/` is the app in FSD with
+  `views/` instead of `pages/` (Next.js reserves `src/pages/` for the Pages
+  Router), and `dither-next/app/` holds the App Router routes. It does not
+  touch the Vue app, which stays the source of truth.
 - Stack: Vue 3, TypeScript strict, Vite, Tailwind v4, d3-scale/d3-shape.
   No vue-router; Vitest covers models/components; no emojis in code.
   `dither-next/` uses Next.js 15 (App Router), React 19, TypeScript strict,
-  Tailwind v4 — see `dither-next/AGENTS.md`.
+  Tailwind v4, d3-scale/d3-shape — see `dither-next/AGENTS.md`.
 - Aliases: `@` → `src/`, `@dither-kit` → `dither-kit/` (vite.config.ts +
   tsconfig paths — change both together). `dither-next/` mirrors these
   aliases in its own `tsconfig.json`.
@@ -98,9 +102,13 @@ Default section order:
 
 ## Workflow Rules
 
-- Verification gate before any commit: `npx vue-tsc --noEmit` and
-  `npx vite build` green; visual/stateful changes also checked in a live
-  browser (vite preview + screenshots).
+- Verification gate before any commit:
+  - Vue app (`dither-kit/`, `src/`): `npx vue-tsc --noEmit` and
+    `npx vite build` green.
+  - Next.js port (`dither-next/`): `cd dither-next && npx tsc --noEmit` and
+    `npm run build` green.
+  - Visual/stateful changes in either tree also checked in a live browser
+    (vite preview / `next start` + screenshots).
 - Multiple agents may work this tree concurrently. Stage and commit only the
   files you changed; never revert another agent's uncommitted work — if it
   blocks the build, save a patch first and coordinate.
@@ -124,11 +132,10 @@ Default section order:
 - `src/AGENTS.md` — the app: FSD layers, routing, editor/history/persistence
   contracts, a11y floor
   - `src/pages/AGENTS.md` — landing/docs/studio page conventions
-- `dither-next/AGENTS.md` — the Next.js/React port: scaffold + engine
-  (framework-agnostic TS ported verbatim, Vue reactivity → React contexts/hooks)
-
-<!-- BACKLOG.MD MCP GUIDELINES START -->
-
+- `dither-next/AGENTS.md` — the Next.js/React port: full port (engine +
+  75 React components, app shell, landing, docs, studio; framework-agnostic
+  TS ported verbatim, Vue reactivity → React contexts/hooks, FSD `views/`
+  instead of `pages/`)
 <CRITICAL_INSTRUCTION>
 
 ## BACKLOG WORKFLOW INSTRUCTIONS
