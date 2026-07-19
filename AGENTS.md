@@ -78,10 +78,15 @@ Default section order:
 
 - dither-ui: a dithered UI toolkit for Vue (dither-ui.com). Two halves:
   `dither-kit/` (the portable component library) and `src/` (site + studio).
+  `dither-next/` is an in-progress Next.js/React port (engine ported; components
+  and app pages follow) — it does not touch the Vue app.
 - Stack: Vue 3, TypeScript strict, Vite, Tailwind v4, d3-scale/d3-shape.
   No vue-router; Vitest covers models/components; no emojis in code.
+  `dither-next/` uses Next.js 15 (App Router), React 19, TypeScript strict,
+  Tailwind v4 — see `dither-next/AGENTS.md`.
 - Aliases: `@` → `src/`, `@dither-kit` → `dither-kit/` (vite.config.ts +
-  tsconfig paths — change both together).
+  tsconfig paths — change both together). `dither-next/` mirrors these
+  aliases in its own `tsconfig.json`.
 - Canonical routes: `/` landing · `/docs[/section]` · `/studio`; legacy hash
   routes remain supported for old links. GitHub Pages deploys through
   `.github/workflows/pages.yml`; default deploy base is `/` because
@@ -114,13 +119,39 @@ Default section order:
   new dependencies. Net-negative LOC is prized when behavior remains complete.
 - Accessibility is a floor, not a feature: labels, focus rings, reduced-motion
   and reduced-transparency support are expected in every change.
-- Studio serves Vue developers and visual designers equally. Use the durable
-  audience, interaction, and aesthetic contract in `.impeccable.md` for UI work.
-
-## Child DOX Index
-
 - `dither-kit/AGENTS.md` — the toolkit: dither engine, palette, component
   contracts, portability rules
 - `src/AGENTS.md` — the app: FSD layers, routing, editor/history/persistence
   contracts, a11y floor
   - `src/pages/AGENTS.md` — landing/docs/studio page conventions
+- `dither-next/AGENTS.md` — the Next.js/React port: scaffold + engine
+  (framework-agnostic TS ported verbatim, Vue reactivity → React contexts/hooks)
+
+<!-- BACKLOG.MD MCP GUIDELINES START -->
+
+<CRITICAL_INSTRUCTION>
+
+## BACKLOG WORKFLOW INSTRUCTIONS
+
+This project uses Backlog.md MCP for all task and project management activities.
+
+**CRITICAL GUIDANCE**
+
+- If your client supports MCP resources, read `backlog://workflow/overview` to understand when and how to use Backlog for this project.
+- If your client only supports tools or the above request fails, call `backlog.get_backlog_instructions()` to load the tool-oriented overview. Use the `instruction` selector when you need `task-creation`, `task-execution`, or `task-finalization`.
+
+- **First time working here?** Read the overview resource IMMEDIATELY to learn the workflow
+- **Already familiar?** You should have the overview cached ("## Backlog.md Overview (MCP)")
+- **When to read it**: BEFORE creating tasks, or when you're unsure whether to track work
+
+These guides cover:
+- Decision framework for when to create tasks
+- Search-first workflow to avoid duplicates
+- Links to detailed guides for task creation, execution, and finalization
+- MCP tools reference
+
+You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
+
+</CRITICAL_INSTRUCTION>
+
+<!-- BACKLOG.MD MCP GUIDELINES END -->
